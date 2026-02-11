@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8090:80"
+    volumes:
+      - ./site/www.hanak-nabytek.cz:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./search-ui:/usr/share/nginx/search:ro
+    depends_on:
+      - api
+    networks:
+      - hanak
+
+  api:
+    build: ./api
+    ports:
+      - "8091:8000"
+    volumes:
+      - ./chromadb_data:/app/chromadb_data
+    environment:
+      - CHROMADB_PATH=/app/chromadb_data
+    networks:
+      - hanak
+
+networks:
+  hanak:
+    driver: bridge

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+chromadb_data/
+*.log
+venv/
+.venv/
+node_modules/
+site/
+chromadb_data/
