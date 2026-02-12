@@ -69,18 +69,21 @@
   function open() {
     if (!container) createContainer();
     isOpen = true;
-    container.classList.add('hs-active');
-    trigger.classList.add('hs-hidden');
-    input.value = '';
-    resultsScroll.innerHTML = '';
-    resultsPanel.classList.remove('has-results');
-    activeIndex = -1;
-    // Focus with multiple attempts to ensure it works
-    requestAnimationFrame(() => {
+
+    // Phase 1: expand trigger pill into bar shape
+    trigger.classList.add('hs-expanded');
+
+    // Phase 2: after expansion, show the real search container on top
+    setTimeout(() => {
+      container.classList.add('hs-active');
+      trigger.classList.add('hs-hidden');
+      trigger.classList.remove('hs-expanded');
+      input.value = '';
+      resultsScroll.innerHTML = '';
+      resultsPanel.classList.remove('has-results');
+      activeIndex = -1;
       input.focus();
-      setTimeout(() => input.focus(), 100);
-      setTimeout(() => input.focus(), 300);
-    });
+    }, 380);
   }
 
   function close() {

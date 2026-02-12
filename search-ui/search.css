@@ -3,16 +3,17 @@
    No fullscreen overlay, just clean floating search
    ═══════════════════════════════════════════════════════ */
 
-/* ─── Trigger: Oval "Hledat" button ─────────────────── */
+/* ─── Trigger: Oval "Hledat" button that expands ────── */
 #hanak-search-trigger {
   position: fixed;
   bottom: 28px;
   right: 28px;
-  z-index: 9998;
+  z-index: 10000;
   height: 48px;
+  width: 120px;
   padding: 0 24px 0 20px;
-  border-radius: 24px;
-  border: none;
+  border-radius: 26px;
+  border: 1px solid rgba(255,255,255,0.06);
   background: rgba(20, 20, 20, 0.92);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -25,9 +26,15 @@
   font-family: system-ui, -apple-system, sans-serif;
   font-weight: 500;
   letter-spacing: 0.02em;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              height 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.05s,
+              border-radius 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s ease,
+              bottom 0.3s ease,
+              right 0.3s ease;
   transform-origin: right center;
+  overflow: hidden;
 }
 
 #hanak-search-trigger * {
@@ -38,21 +45,43 @@
   width: 18px;
   height: 18px;
   opacity: 0.7;
+  flex-shrink: 0;
   transition: opacity 0.3s;
 }
 
+#hanak-search-trigger span {
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
 #hanak-search-trigger:hover {
-  background: rgba(40, 40, 40, 0.92);
   box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.1);
-  transform: scale(1.03);
 }
 
 #hanak-search-trigger:hover svg { opacity: 1; }
 
+/* Expanded state — trigger becomes the search bar */
+#hanak-search-trigger.hs-expanded {
+  width: 520px;
+  max-width: calc(100vw - 40px);
+  height: 52px;
+  bottom: 20px;
+  right: 20px;
+  border-color: rgba(197, 163, 106, 0.3);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(197, 163, 106, 0.15);
+}
+
+#hanak-search-trigger.hs-expanded span {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
 #hanak-search-trigger.hs-hidden {
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.9);
+  width: 0;
+  height: 0;
 }
 
 /* ─── Search Container (no backdrop, no overlay) ────── */
@@ -67,7 +96,7 @@
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.25s ease, visibility 0.25s ease;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
 #hanak-search-container.hs-active {
