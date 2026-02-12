@@ -164,6 +164,9 @@
         ? `<img src="${resolveImage(s.image)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<span class=hs-result-thumb-icon>📄</span>'">`
         : `<span class="hs-result-thumb-icon">${getCategoryIcon(s.category)}</span>`;
 
+      const pct = s.score != null ? Math.round(s.score * 100) : null;
+      const scoreHtml = pct != null ? `<span class="hs-result-score">${pct}%</span>` : '';
+
       return `
         <a href="${escapeHtml(s.url)}" class="hs-result" data-url="${escapeHtml(s.url)}">
           <div class="hs-result-thumb">${thumbHtml}</div>
@@ -171,6 +174,7 @@
             <div class="hs-result-title">${highlightMatch(s.title, data.query)}</div>
             ${s.category ? `<div class="hs-result-cat">${escapeHtml(s.category)}</div>` : ''}
           </div>
+          ${scoreHtml}
           <svg class="hs-result-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 18l6-6-6-6"/>
           </svg>
