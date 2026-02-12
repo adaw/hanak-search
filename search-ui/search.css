@@ -1,20 +1,19 @@
 /* ═══════════════════════════════════════════════════════
-   Hanak Search — Clean Oval Bar + Upward Results
-   No fullscreen overlay, just clean floating search
+   Hanak Search — Expanding pill with lightbox results
    ═══════════════════════════════════════════════════════ */
 
-/* ─── Trigger: Oval "Hledat" button that expands ────── */
+/* ─── Trigger: Oval "Hledat" pill ───────────────────── */
 #hanak-search-trigger {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
+  bottom: 24px;
+  right: 24px;
   z-index: 10000;
   height: 48px;
   width: 120px;
-  padding: 0 24px 0 20px;
+  padding: 0 22px 0 18px;
   border-radius: 26px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(20, 20, 20, 0.92);
+  background: rgba(20, 20, 20, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   color: rgba(255, 255, 255, 0.9);
@@ -27,26 +26,23 @@
   font-weight: 500;
   letter-spacing: 0.02em;
   box-shadow: 0 4px 24px rgba(0,0,0,0.25);
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              height 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.05s,
-              border-radius 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+  transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s ease,
               box-shadow 0.3s ease,
-              bottom 0.3s ease,
-              right 0.3s ease;
-  transform-origin: right center;
+              opacity 0.3s ease;
+  transform-origin: bottom right;
   overflow: hidden;
 }
 
-#hanak-search-trigger * {
-  pointer-events: none;
-}
+#hanak-search-trigger * { pointer-events: none; }
 
 #hanak-search-trigger svg {
   width: 18px;
   height: 18px;
-  opacity: 0.7;
   flex-shrink: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.2s;
 }
 
 #hanak-search-trigger span {
@@ -58,65 +54,73 @@
   box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.1);
 }
 
-#hanak-search-trigger:hover svg { opacity: 1; }
-
-/* Expanded state — trigger becomes the search bar */
+/* Expanded = looks like the search bar */
 #hanak-search-trigger.hs-expanded {
   width: 520px;
-  max-width: calc(100vw - 40px);
+  max-width: calc(100vw - 48px);
   height: 52px;
-  bottom: 20px;
-  right: 20px;
   border-color: rgba(197, 163, 106, 0.3);
   box-shadow: 0 4px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(197, 163, 106, 0.15);
 }
 
 #hanak-search-trigger.hs-expanded span {
   opacity: 0;
-  width: 0;
-  overflow: hidden;
 }
 
-#hanak-search-trigger.hs-hidden {
+/* Collapsing back = reverse animation */
+#hanak-search-trigger.hs-collapsing {
+  width: 120px;
+  height: 48px;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-radius 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s ease,
+              box-shadow 0.3s ease,
+              opacity 0.3s ease;
+}
+
+#hanak-search-trigger.hs-collapsing span {
+  opacity: 1;
+}
+
+#hanak-search-trigger.hs-gone {
   opacity: 0;
   pointer-events: none;
-  width: 0;
-  height: 0;
 }
 
-/* ─── Search Container (no backdrop, no overlay) ────── */
+/* ─── Search Container ──────────────────────────────── */
 #hanak-search-container {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 9999;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10001;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   pointer-events: none;
   opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 
 #hanak-search-container.hs-active {
   opacity: 1;
-  visibility: visible;
   pointer-events: all;
 }
 
 /* ─── Results Panel (above the bar) ─────────────────── */
 .hs-results-panel {
   width: 520px;
-  max-width: calc(100vw - 40px);
+  max-width: calc(100vw - 48px);
   max-height: 0;
   overflow: hidden;
-  background: rgba(20, 20, 20, 0.75);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: rgba(18, 18, 18, 0.65);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 16px 64px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 64px rgba(0,0,0,0.35);
   margin-bottom: 8px;
   transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
               opacity 0.25s ease;
@@ -171,27 +175,21 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ─── Search Bar (oval, clean) ──────────────────────── */
+/* ─── Search Bar ────────────────────────────────────── */
 .hs-bar {
   width: 520px;
-  max-width: calc(100vw - 40px);
+  max-width: calc(100vw - 48px);
   height: 52px;
-  background: rgba(20, 20, 20, 0.92);
+  background: rgba(20, 20, 20, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 26px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.04);
+  border: 1px solid rgba(197, 163, 106, 0.3);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(197, 163, 106, 0.15);
   display: flex;
   align-items: center;
   padding: 0 18px;
   gap: 12px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.hs-bar:focus-within {
-  border-color: rgba(197, 163, 106, 0.3);
-  box-shadow: 0 4px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(197, 163, 106, 0.15);
 }
 
 .hs-icon {
@@ -331,6 +329,68 @@
   transform: translateX(2px);
 }
 
+/* ─── Lightbox ──────────────────────────────────────── */
+.hs-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  cursor: pointer;
+}
+
+.hs-lightbox.hs-lb-active {
+  opacity: 1;
+}
+
+.hs-lightbox-content {
+  max-width: 85vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: default;
+}
+
+.hs-lightbox-img {
+  max-width: 85vw;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+
+.hs-lightbox-info {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.hs-lightbox-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.hs-lightbox-link {
+  font-size: 12px;
+  color: #c5a36a;
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.hs-lightbox-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
 /* ─── Empty / Loading ───────────────────────────────── */
 .hs-empty {
   padding: 24px 18px;
@@ -365,20 +425,26 @@
     bottom: 12px;
   }
 
+  #hanak-search-trigger {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  #hanak-search-trigger.hs-expanded {
+    width: calc(100vw - 32px);
+  }
+
   .hs-bar,
   .hs-results-panel {
     width: calc(100vw - 24px);
   }
 
-  #hanak-search-trigger {
-    bottom: 16px;
-    right: 16px;
-    height: 44px;
-    padding: 0 18px 0 16px;
-    font-size: 13px;
-  }
-
   .hs-results-panel.has-results {
     max-height: 320px;
+  }
+
+  .hs-lightbox-img {
+    max-width: 95vw;
+    max-height: 65vh;
   }
 }

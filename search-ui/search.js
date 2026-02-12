@@ -1,6 +1,5 @@
 /**
- * Hanak Search — Clean oval bar + upward results
- * No fullscreen overlay — just a floating search widget
+ * Hanak Search — Expanding pill + lightbox preview
  */
 (function() {
   'use strict';
@@ -19,6 +18,7 @@
   let activeIndex = -1;
   let debounceTimer = null;
   let isOpen = false;
+  let isAnimating = false;
 
   // ─── Create DOM ───────────────────────────────────────
   function createContainer() {
@@ -57,7 +57,6 @@
     input.addEventListener('input', onInput);
     input.addEventListener('keydown', onKeydown);
 
-    // Close on click outside
     document.addEventListener('click', (e) => {
       if (isOpen && !container.contains(e.target) && e.target !== trigger) {
         close();
@@ -65,33 +64,53 @@
     });
   }
 
-  // ─── Open / Close ─────────────────────────────────────
+  // ─── Open / Close with animations ────────────────────
   function open() {
+    if (isAnimating || isOpen) return;
     if (!container) createContainer();
-    isOpen = true;
+    isAnimating = true;
 
-    // Phase 1: expand trigger pill into bar shape
+    // Phase 1: expand pill → bar shape
     trigger.classList.add('hs-expanded');
 
-    // Phase 2: after expansion, show the real search container on top
+    // Phase 2: show real container seamlessly on top, hide trigger
     setTimeout(() => {
       container.classList.add('hs-active');
-      trigger.classList.add('hs-hidden');
-      trigger.classList.remove('hs-expanded');
+      trigger.classList.add('hs-gone');
       input.value = '';
       resultsScroll.innerHTML = '';
       resultsPanel.classList.remove('has-results');
       activeIndex = -1;
       input.focus();
-    }, 380);
+      isOpen = true;
+      isAnimating = false;
+    }, 420);
   }
 
   function close() {
-    if (!isOpen) return;
+    if (isAnimating || !isOpen) return;
+    isAnimating = true;
     isOpen = false;
+
+    // Phase 1: hide container
     resultsPanel.classList.remove('has-results');
     container.classList.remove('hs-active');
-    trigger.classList.remove('hs-hidden');
+
+    // Phase 2: show trigger in expanded state, then collapse
+    trigger.classList.remove('hs-gone');
+    trigger.classList.add('hs-expanded');
+
+    // Small delay for container to fade, then collapse trigger
+    setTimeout(() => {
+      trigger.classList.remove('hs-expanded');
+      trigger.classList.add('hs-collapsing');
+    }, 80);
+
+    // Phase 3: cleanup
+    setTimeout(() => {
+      trigger.classList.remove('hs-collapsing');
+      isAnimating = false;
+    }, 520);
   }
 
   // ─── Input handling ───────────────────────────────────
@@ -129,8 +148,7 @@
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (activeIndex >= 0 && items[activeIndex]) {
-        const url = items[activeIndex].dataset.url;
-        if (url) window.location.href = url;
+        handleResultClick(items[activeIndex]);
       }
     }
   }
@@ -176,7 +194,7 @@
       const scoreHtml = pct != null ? `<span class="hs-result-score">${pct}%</span>` : '';
 
       return `
-        <a href="${escapeHtml(s.url)}" class="hs-result" data-url="${escapeHtml(s.url)}">
+        <div class="hs-result" data-url="${escapeHtml(s.url)}" data-title="${escapeHtml(s.title)}" data-image="${s.image ? escapeHtml(resolveImage(s.image)) : ''}">
           <div class="hs-result-thumb">${thumbHtml}</div>
           <div class="hs-result-body">
             <div class="hs-result-title">${highlightMatch(s.title, data.query)}</div>
@@ -186,15 +204,69 @@
           <svg class="hs-result-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 18l6-6-6-6"/>
           </svg>
-        </a>
+        </div>
       `;
     }).join('');
+
+    // Attach click handlers
+    resultsScroll.querySelectorAll('.hs-result').forEach(el => {
+      el.addEventListener('click', () => handleResultClick(el));
+    });
+  }
+
+  // ─── Lightbox ─────────────────────────────────────────
+  function handleResultClick(el) {
+    const image = el.dataset.image;
+    const url = el.dataset.url;
+    const title = el.dataset.title;
+
+    if (image) {
+      openLightbox(image, title, url);
+    } else if (url) {
+      window.location.href = url;
+    }
+  }
+
+  function openLightbox(imageSrc, title, pageUrl) {
+    const lb = document.createElement('div');
+    lb.className = 'hs-lightbox';
+    lb.innerHTML = `
+      <div class="hs-lightbox-content">
+        <img class="hs-lightbox-img" src="${imageSrc}" alt="${escapeHtml(title)}">
+        <div class="hs-lightbox-info">
+          <div class="hs-lightbox-title">${escapeHtml(title)}</div>
+          <a class="hs-lightbox-link" href="${escapeHtml(pageUrl)}" target="_blank">Otevřít stránku →</a>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(lb);
+
+    // Fade in
+    requestAnimationFrame(() => lb.classList.add('hs-lb-active'));
+
+    // Close on backdrop click
+    lb.addEventListener('click', (e) => {
+      if (e.target === lb) {
+        lb.classList.remove('hs-lb-active');
+        setTimeout(() => lb.remove(), 250);
+      }
+    });
+
+    // Close on Escape
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        lb.classList.remove('hs-lb-active');
+        setTimeout(() => lb.remove(), 250);
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
   }
 
   // ─── Helpers ──────────────────────────────────────────
   function escapeHtml(str) {
     const div = document.createElement('div');
-    div.textContent = str;
+    div.textContent = str || '';
     return div.innerHTML;
   }
 
@@ -230,7 +302,6 @@
 
   // ─── Inject trigger button ────────────────────────────
   function injectTrigger() {
-    // Hijack existing search elements
     const existing = document.querySelector(
       'a[href*="search"], .search-toggle, .search-icon, [data-search], .fa-search, .fa-magnifying-glass'
     );
