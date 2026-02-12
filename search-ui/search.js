@@ -1,6 +1,6 @@
 /**
- * Hanak Search — Expandable bottom bar with typeahead
- * Trigger: oval "Hledat" → expands left into search bar → results grow upward
+ * Hanak Search — Clean oval bar + upward results
+ * No fullscreen overlay — just a floating search widget
  */
 (function() {
   'use strict';
@@ -11,77 +11,79 @@
   const MAX_SUGGESTIONS = 8;
   const HANAK_ORIGIN = 'https://www.hanak-nabytek.cz';
 
-  let overlay = null;
-  let bar = null;
+  let container = null;
   let input = null;
-  let resultsList = null;
+  let resultsScroll = null;
+  let resultsPanel = null;
+  let trigger = null;
   let activeIndex = -1;
   let debounceTimer = null;
   let isOpen = false;
 
   // ─── Create DOM ───────────────────────────────────────
-  function createOverlay() {
-    overlay = document.createElement('div');
-    overlay.id = 'hanak-search-overlay';
-    overlay.innerHTML = `
-      <div class="hs-backdrop"></div>
-      <div class="hs-bar">
-        <div class="hs-results"></div>
+  function createContainer() {
+    container = document.createElement('div');
+    container.id = 'hanak-search-container';
+    container.innerHTML = `
+      <div class="hs-results-panel">
+        <div class="hs-results-scroll"></div>
         <div class="hs-footer">
           <span class="hs-footer-hint">
             <kbd>↑↓</kbd> navigace &nbsp; <kbd>Enter</kbd> otevřít &nbsp; <kbd>Esc</kbd> zavřít
           </span>
           <span class="hs-footer-time"></span>
         </div>
-        <div class="hs-input-wrap">
-          <svg class="hs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
+      </div>
+      <div class="hs-bar">
+        <svg class="hs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" class="hs-input" placeholder="Hledejte produkty, kolekce, realizace..." autocomplete="off" spellcheck="false">
+        <button class="hs-close" title="Zavřít">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M18 6 6 18M6 6l12 12"/>
           </svg>
-          <input type="text" class="hs-input" placeholder="Hledejte produkty, kolekce, realizace..." autocomplete="off" spellcheck="false">
-          <button class="hs-close" title="Zavřít">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-              <path d="M18 6 6 18M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
+        </button>
       </div>
     `;
-    document.body.appendChild(overlay);
+    document.body.appendChild(container);
 
-    bar = overlay.querySelector('.hs-bar');
-    input = overlay.querySelector('.hs-input');
-    resultsList = overlay.querySelector('.hs-results');
+    input = container.querySelector('.hs-input');
+    resultsScroll = container.querySelector('.hs-results-scroll');
+    resultsPanel = container.querySelector('.hs-results-panel');
 
-    // Events
-    overlay.querySelector('.hs-backdrop').addEventListener('click', close);
-    overlay.querySelector('.hs-close').addEventListener('click', close);
+    container.querySelector('.hs-close').addEventListener('click', close);
     input.addEventListener('input', onInput);
     input.addEventListener('keydown', onKeydown);
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (isOpen && !container.contains(e.target) && e.target !== trigger) {
+        close();
+      }
+    });
   }
 
   // ─── Open / Close ─────────────────────────────────────
   function open() {
-    if (!overlay) createOverlay();
+    if (!container) createContainer();
     isOpen = true;
-    overlay.classList.add('hs-active');
+    container.classList.add('hs-active');
+    trigger.classList.add('hs-hidden');
     input.value = '';
-    resultsList.innerHTML = '';
-    resultsList.classList.remove('has-results');
+    resultsScroll.innerHTML = '';
+    resultsPanel.classList.remove('has-results');
     activeIndex = -1;
-    // Focus after animation
-    setTimeout(() => input.focus(), 350);
-    document.body.style.overflow = 'hidden';
+    setTimeout(() => input.focus(), 150);
   }
 
   function close() {
     if (!isOpen) return;
     isOpen = false;
-    resultsList.classList.remove('has-results');
-    setTimeout(() => {
-      overlay.classList.remove('hs-active');
-      document.body.style.overflow = '';
-    }, 100);
+    resultsPanel.classList.remove('has-results');
+    container.classList.remove('hs-active');
+    trigger.classList.remove('hs-hidden');
   }
 
   // ─── Input handling ───────────────────────────────────
@@ -90,20 +92,20 @@
     const q = input.value.trim();
 
     if (q.length < MIN_CHARS) {
-      resultsList.innerHTML = '';
-      resultsList.classList.remove('has-results');
+      resultsScroll.innerHTML = '';
+      resultsPanel.classList.remove('has-results');
       activeIndex = -1;
       return;
     }
 
-    resultsList.innerHTML = '<div class="hs-loading"><div class="hs-spinner"></div></div>';
-    resultsList.classList.add('has-results');
+    resultsScroll.innerHTML = '<div class="hs-loading"><div class="hs-spinner"></div></div>';
+    resultsPanel.classList.add('has-results');
     debounceTimer = setTimeout(() => fetchResults(q), DEBOUNCE_MS);
   }
 
   function onKeydown(e) {
-    const items = resultsList.querySelectorAll('.hs-result');
-    
+    const items = resultsScroll.querySelectorAll('.hs-result');
+
     if (e.key === 'Escape') {
       e.preventDefault();
       close();
@@ -139,25 +141,25 @@
       const data = await resp.json();
       renderSuggestions(data);
     } catch (err) {
-      resultsList.innerHTML = '<div class="hs-empty">Chyba při vyhledávání</div>';
-      resultsList.classList.add('has-results');
+      resultsScroll.innerHTML = '<div class="hs-empty">Chyba při vyhledávání</div>';
+      resultsPanel.classList.add('has-results');
     }
   }
 
   function renderSuggestions(data) {
-    const footer = overlay.querySelector('.hs-footer-time');
+    const footer = container.querySelector('.hs-footer-time');
     footer.textContent = `${data.time_ms.toFixed(0)} ms`;
 
     if (!data.suggestions || data.suggestions.length === 0) {
-      resultsList.innerHTML = `<div class="hs-empty">Nic nenalezeno pro "${escapeHtml(data.query)}"</div>`;
-      resultsList.classList.add('has-results');
+      resultsScroll.innerHTML = `<div class="hs-empty">Nic nenalezeno pro "${escapeHtml(data.query)}"</div>`;
+      resultsPanel.classList.add('has-results');
       activeIndex = -1;
       return;
     }
 
     activeIndex = -1;
-    resultsList.classList.add('has-results');
-    resultsList.innerHTML = data.suggestions.map((s) => {
+    resultsPanel.classList.add('has-results');
+    resultsScroll.innerHTML = data.suggestions.map((s) => {
       const thumbHtml = s.image
         ? `<img src="${resolveImage(s.image)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<span class=hs-result-thumb-icon>📄</span>'">`
         : `<span class="hs-result-thumb-icon">${getCategoryIcon(s.category)}</span>`;
@@ -228,19 +230,18 @@
       });
     }
 
-    // Floating oval trigger
-    const btn = document.createElement('button');
-    btn.id = 'hanak-search-trigger';
-    btn.innerHTML = `
+    trigger = document.createElement('button');
+    trigger.id = 'hanak-search-trigger';
+    trigger.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
         <circle cx="11" cy="11" r="8"/>
         <path d="m21 21-4.35-4.35"/>
       </svg>
       <span>Hledat</span>
     `;
-    btn.title = 'Vyhledávání (Ctrl+K)';
-    btn.addEventListener('click', open);
-    document.body.appendChild(btn);
+    trigger.title = 'Vyhledávání (Ctrl+K)';
+    trigger.addEventListener('click', open);
+    document.body.appendChild(trigger);
   }
 
   // ─── Init ─────────────────────────────────────────────

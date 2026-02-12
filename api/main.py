@@ -12,6 +12,13 @@ import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 
+import unicodedata
+
+def _strip_diacritics(text: str) -> str:
+    """Remove diacritics for fuzzy Czech matching (kuchyne → kuchyne, kuchyně → kuchyne)."""
+    nfkd = unicodedata.normalize('NFKD', text)
+    return ''.join(c for c in nfkd if not unicodedata.combining(c))
+
 app = FastAPI(title="Hanak Search API", version="1.0.0")
 
 app.add_middleware(
@@ -132,6 +139,7 @@ async def suggest(
     suggestions = []
     seen_titles = set()
     q_lower = q.lower()
+    q_norm = _strip_diacritics(q_lower)
     for meta, dist in zip(results["metadatas"][0], results["distances"][0]):
         score = 1 - dist
         if score < 0.2:
@@ -140,13 +148,20 @@ async def suggest(
         url = meta.get("url", "#")
         if title and title not in seen_titles:
             seen_titles.add(title)
-            # Boost: prefix match in title or Czech content prioritized over foreign
             title_lower = title.lower()
+            title_norm = _strip_diacritics(title_lower)
             boost = 0.0
-            if q_lower in title_lower:
+            # Exact diacritics-insensitive match in title
+            if q_norm in title_norm:
                 boost += 0.3
-            if title_lower.startswith(q_lower):
+            if q_lower in title_lower:
+                boost += 0.1  # extra for exact diacritics match
+            if title_norm.startswith(q_norm):
                 boost += 0.2
+            # Primary category page boost (short URL = main page)
+            url_depth = url.strip('/').count('/')
+            if url_depth <= 1 and q_norm in title_norm:
+                boost += 0.15
             # Deprioritize foreign language pages
             if any(f"/{lang}/" in url or url.startswith(f"/{lang}?") for lang in ("de", "fr", "en", "ru")):
                 boost -= 0.15
