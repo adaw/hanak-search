@@ -18,6 +18,8 @@ services:
       - "8091:8000"
     volumes:
       - ./chromadb_data:/app/chromadb_data
+      - ./site:/app/site:ro
+      - ./image-descriptions.json:/app/image-descriptions.json:ro
     environment:
       - CHROMADB_PATH=/app/chromadb_data
     networks:

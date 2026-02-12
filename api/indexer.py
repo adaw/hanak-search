@@ -146,11 +146,50 @@ def main():
         metadata={"hnsw:space": "cosine"}
     )
 
+    # Load image descriptions if available
+    image_desc_path = None
+    for candidate in [
+        os.path.join(os.path.dirname(SITE_DIR), "image-descriptions.json"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "image-descriptions.json"),
+        "/app/image-descriptions.json",
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "image-descriptions.json"),
+    ]:
+        if os.path.exists(candidate):
+            image_desc_path = candidate
+            break
+    image_descs = []
+    if image_desc_path and os.path.exists(image_desc_path):
+        import json
+        with open(image_desc_path) as f:
+            image_descs = json.load(f)
+        print(f"Loaded {len(image_descs)} image descriptions")
+
     # Index all chunks
     total_chunks = 0
     all_docs = []
     all_ids = []
     all_metas = []
+
+    # Add image descriptions as searchable chunks
+    for img in image_descs:
+        doc_id = hashlib.md5(f"img_{img['filename']}".encode()).hexdigest()
+        # Find which page this image belongs to (approximate by filename)
+        fname_lower = img["filename"].lower()
+        category = "Obrázek"
+        url = img.get("path", f"/fileadmin/user_upload/{img['filename']}")
+        title = f"Obrázek: {img['filename'].replace('.jpg','').replace('.png','').replace('-',' ').replace('_',' ')}"
+        
+        all_docs.append(img["description"])
+        all_ids.append(doc_id)
+        all_metas.append({
+            "title": title,
+            "url": url,
+            "category": category,
+            "chunk_index": 0,
+            "meta_desc": img["description"][:500],
+            "og_image": url,
+        })
+        total_chunks += 1
 
     for page in pages:
         for i, chunk in enumerate(page["chunks"]):
