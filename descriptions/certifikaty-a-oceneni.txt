@@ -1,0 +1,7 @@
+Typ stránky: obecná stránka
+Titulek: Certifikáty a ocenění — HANÁK Nábytek
+Popis: HANÁK Nábytek je hrdý na své certifikáty a ocenění. Zjistěte, proč jsme vysoce ceněným výrobcem nábytku, dveří a kuchyní. 
+Hlavní nadpis: Certifikáty a ocenění
+Počet obrázků: 32
+Navigace obsahuje: Interior Concept, Nábytek, Realizace, Proč HANÁK, Interior Concept, Nábytek, Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

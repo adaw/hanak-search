@@ -1,0 +1,8 @@
+Typ stránky: kategorie - koupelny
+Titulek: Kvalitní nábytek do koupelny — HANÁK Nábytek
+Popis: Nabízíme pro vás novou kolekci koupelnového nábytku HANÁK. Kvalitní, designový a hlavně voděodolný nábytek do vaší koupelny v té nejvyšší kvalitě.
+Hlavní nadpis: Koupelny HANÁK
+Sekce: Realizace koupelen HANÁK
+Počet obrázků: 35
+Navigace obsahuje: Interior Concept, Nábytek(current), Realizace, Proč HANÁK, Interior Concept, Nábytek(current), Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

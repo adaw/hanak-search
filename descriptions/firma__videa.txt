@@ -1,0 +1,8 @@
+Typ stránky: obecná stránka
+Titulek: Videa — HANÁK Nábytek
+Popis: Podívejte se na naše nejnovější videa a objevte svět HANÁK nábytku, dveří a kuchyní. Inspirujte se našimi nábytkovými a kuchyňskými řešeními pro váš domov.
+Hlavní nadpis: Videa, Showroomy, Developerské projekty
+Sekce: Novinky & Eventy, Nábytek
+Počet obrázků: 39
+Navigace obsahuje: Interior Concept, Nábytek, Realizace, Proč HANÁK, Interior Concept, Nábytek, Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

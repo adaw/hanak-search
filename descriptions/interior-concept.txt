@@ -1,0 +1,8 @@
+Typ stránky: obecná stránka
+Titulek: Interior Concept — HANÁK Nábytek
+Popis: Interior Concept od HANÁK Nábytek: Inspirační svět designu a interiérů. Objevte kreativitu a kvalitu v našich interiérových konceptech. Změňte svůj domov na místo elegance a pohodlí.
+Hlavní nadpis: HANÁK Interior Concept
+Sekce: Kuchyně, Jídelny, Obývací pokoje, Interiérové dveře, Šatny
+Počet obrázků: 36
+Navigace obsahuje: Interior Concept(current), Nábytek, Realizace, Proč HANÁK, Interior Concept(current), Nábytek, Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

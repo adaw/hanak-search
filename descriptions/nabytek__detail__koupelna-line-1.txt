@@ -1,0 +1,8 @@
+Typ stránky: detail produktu
+Titulek: Koupelna LINE — HANÁK Nábytek
+Popis: Stylová a jednoduchá koupelnová sestava s hladkými dvířky, dostupná ve variantě přírodních dýh i lesklých či matných laků. Doplnit lze designovou úchytkou z naší aktuální nabídky.
+Hlavní nadpis: Koupelna LINE
+Sekce: Realizace koupelny LINE, Mohlo by vás zajímat
+Počet obrázků: 20
+Navigace obsahuje: Interior Concept, Nábytek, Realizace, Proč HANÁK, Interior Concept, Nábytek, Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

@@ -1,0 +1,8 @@
+Typ stránky: kategorie nábytku
+Titulek: Pracovny a pracovní kouty — HANÁK Nábytek
+Popis: Pracovny vyrábíme na míru. Vytvořte si pracovnu, ve které vám práce půjde od ruky.
+Hlavní nadpis: Pracovny HANÁK
+Sekce: Realizace pracoven HANÁK
+Počet obrázků: 22
+Navigace obsahuje: Interior Concept, Nábytek(current), Realizace, Proč HANÁK, Interior Concept, Nábytek(current), Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

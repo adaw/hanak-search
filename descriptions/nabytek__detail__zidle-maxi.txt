@@ -1,0 +1,8 @@
+Typ stránky: detail produktu
+Titulek: Židle MAXI — HANÁK Nábytek
+Popis: Přední český výrobce kuchyní, luxusních interiérových dveří, vestavěných skříní a šaten, obývacích stěn, ložnicového nábytku, stolů i zakázkového nábytku.
+Hlavní nadpis: Židle MAXI
+Sekce: Realizace HANÁK, Mohlo by vás zajímat
+Počet obrázků: 24
+Navigace obsahuje: Interior Concept, Nábytek, Realizace, Proč HANÁK, Interior Concept, Nábytek, Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

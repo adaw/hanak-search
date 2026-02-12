@@ -1,0 +1,7 @@
+Typ stránky: přehled aktualit
+Titulek: Aktuálně — HANÁK Nábytek
+Popis: Objevte novinky ze světa špičkového nábytku, dveří a moderních kuchyňských linek od HANÁK Nábytek. Naše kuchyně spojují inovativní design s kvalitou, zatímco další nábytek dotváří eleganci vašeho domova.
+Hlavní nadpis: Aktuálně
+Počet obrázků: 16
+Navigace obsahuje: Interior Concept, Nábytek, Realizace, Proč HANÁK, Interior Concept, Nábytek, Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

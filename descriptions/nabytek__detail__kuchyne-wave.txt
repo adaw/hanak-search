@@ -1,0 +1,8 @@
+Typ stránky: detail produktu
+Titulek: Kuchyně WAVE — HANÁK Nábytek
+Popis: Přední český výrobce kuchyní, luxusních interiérových dveří, vestavěných skříní a šaten, obývacích stěn, ložnicového nábytku, stolů i zakázkového nábytku.
+Hlavní nadpis: Kuchyně WAVE
+Sekce: Realizace HANÁK, Mohlo by vás zajímat
+Počet obrázků: 33
+Navigace obsahuje: Interior Concept, Nábytek, Realizace, Proč HANÁK, Interior Concept, Nábytek, Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

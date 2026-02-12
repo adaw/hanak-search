@@ -1,0 +1,8 @@
+Typ stránky: obecná stránka
+Titulek: Developerské projekty — HANÁK Nábytek
+Popis: Spolupráce pro developery - HANÁK Nábytek nabízí kvalitní kuchyně, interiérové dveře, šatní skříně a další designová řešení pro developerské projekty. Zjistěte, jak můžeme zlepšit vaše nemovitosti. Jsme spolehlivý partner pro vaše projekty. 
+Hlavní nadpis: Jsme spolehlivý partnerpro vaše projekty
+Sekce: Vitkovia Centrum, Villa La Coste, Victoria Palace, Lihovar, Lihovar 2
+Počet obrázků: 266
+Navigace obsahuje: Interior Concept, Nábytek, Realizace, Proč HANÁK, Interior Concept, Nábytek, Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

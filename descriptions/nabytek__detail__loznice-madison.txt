@@ -1,0 +1,8 @@
+Typ stránky: detail produktu
+Titulek: Ložnice MADISON — HANÁK Nábytek
+Popis: Model MADISON je charakteristický svou precizně zpracovanou rámovou postelí. Zaujme také svým látkovým provedením, které je decentně doplněno o vybranou přírodní dýhu.
+Hlavní nadpis: Ložnice MADISON
+Sekce: Realizace ložnice MADISON, Mohlo by vás zajímat
+Počet obrázků: 27
+Navigace obsahuje: Interior Concept, Nábytek, Realizace, Proč HANÁK, Interior Concept, Nábytek, Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

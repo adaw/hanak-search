@@ -1,0 +1,8 @@
+Typ stránky: detail produktu
+Titulek: Židle TOP — HANÁK Nábytek
+Popis: Variabilita, odolnost, všestrannost a nadčasový design jsou hlavní atributy série TOP. Ať už hledáte klasickou či barovou židli, čalouněný nebo polypropylenový sedák, tato série nabídne mnoho variant v různých provedeních k uspokojení všech požadavků.
+Hlavní nadpis: Židle TOP
+Sekce: Mohlo by vás zajímat
+Počet obrázků: 22
+Navigace obsahuje: Interior Concept, Nábytek, Realizace, Proč HANÁK, Interior Concept, Nábytek, Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

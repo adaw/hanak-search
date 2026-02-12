@@ -1,0 +1,7 @@
+Typ stránky: obecná stránka
+Titulek: Kvalitní nábytek — HANÁK Nábytek
+Popis: Nábytek nejvyšší kvality, vyrobené pomocí nejmodernějších technologií a postupů. Nábytek certifikovaný na zdravotní nezávadnost a odolnost.
+Hlavní nadpis: Nábytek
+Počet obrázků: 18
+Navigace obsahuje: Interior Concept, Nábytek(current), Realizace, Proč HANÁK, Interior Concept, Nábytek(current), Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky

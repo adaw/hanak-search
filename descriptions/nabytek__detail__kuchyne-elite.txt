@@ -1,0 +1,8 @@
+Typ stránky: detail produktu
+Titulek: Kuchyně ELITE — HANÁK Nábytek
+Popis: Elegantní sestava ELITE v čistě přírodní dýze, ke které můžete volit designovou skrytou úchytku v aktuální nabídce provedení tak, aby vše ladilo do posledního detailu.
+Hlavní nadpis: Kuchyně ELITE
+Sekce: Realizace kuchyně ELITE, Mohlo by vás zajímat
+Počet obrázků: 93
+Navigace obsahuje: Interior Concept, Nábytek, Realizace, Proč HANÁK, Interior Concept, Nábytek, Realizace, Proč HANÁK
+Layout: galerie/grid s mnoha obrázky
