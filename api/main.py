@@ -125,25 +125,41 @@ async def suggest(
 
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=limit,
+        n_results=min(limit * 4, 30),  # fetch more candidates for re-ranking
         include=["metadatas", "distances"],
     )
 
     suggestions = []
     seen_titles = set()
+    q_lower = q.lower()
     for meta, dist in zip(results["metadatas"][0], results["distances"][0]):
         score = 1 - dist
         if score < 0.2:
             continue
         title = meta.get("title", "")
+        url = meta.get("url", "#")
         if title and title not in seen_titles:
             seen_titles.add(title)
+            # Boost: prefix match in title or Czech content prioritized over foreign
+            title_lower = title.lower()
+            boost = 0.0
+            if q_lower in title_lower:
+                boost += 0.3
+            if title_lower.startswith(q_lower):
+                boost += 0.2
+            # Deprioritize foreign language pages
+            if any(f"/{lang}/" in url or url.startswith(f"/{lang}?") for lang in ("de", "fr", "en", "ru")):
+                boost -= 0.15
             suggestions.append({
                 "title": title,
-                "url": meta.get("url", "#"),
+                "url": url,
                 "category": meta.get("category", ""),
-                "score": round(score, 4),
+                "score": round(score + boost, 4),
             })
+
+    # Re-sort by boosted score
+    suggestions.sort(key=lambda x: x["score"], reverse=True)
+    suggestions = suggestions[:limit]
 
     elapsed = (time.perf_counter() - start) * 1000
 
