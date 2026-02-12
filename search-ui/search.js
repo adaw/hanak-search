@@ -245,7 +245,7 @@
     trigger = document.createElement('button');
     trigger.id = 'hanak-search-trigger';
     trigger.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#c5a36a" stroke-width="2.5" width="18" height="18">
         <circle cx="11" cy="11" r="8"/>
         <path d="m21 21-4.35-4.35"/>
       </svg>
