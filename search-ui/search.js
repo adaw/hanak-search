@@ -75,7 +75,12 @@
     resultsScroll.innerHTML = '';
     resultsPanel.classList.remove('has-results');
     activeIndex = -1;
-    setTimeout(() => input.focus(), 150);
+    // Focus with multiple attempts to ensure it works
+    requestAnimationFrame(() => {
+      input.focus();
+      setTimeout(() => input.focus(), 100);
+      setTimeout(() => input.focus(), 300);
+    });
   }
 
   function close() {
@@ -164,7 +169,7 @@
         ? `<img src="${resolveImage(s.image)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<span class=hs-result-thumb-icon>📄</span>'">`
         : `<span class="hs-result-thumb-icon">${getCategoryIcon(s.category)}</span>`;
 
-      const pct = s.score != null ? Math.round(s.score * 100) : null;
+      const pct = s.score != null ? Math.min(100, Math.round(s.score * 100)) : null;
       const scoreHtml = pct != null ? `<span class="hs-result-score">${pct}%</span>` : '';
 
       return `
