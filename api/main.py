@@ -154,6 +154,7 @@ async def suggest(
                 "title": title,
                 "url": url,
                 "category": meta.get("category", ""),
+                "image": meta.get("og_image", ""),
                 "score": round(score + boost, 4),
             })
 

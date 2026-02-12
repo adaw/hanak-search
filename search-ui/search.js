@@ -1,16 +1,18 @@
 /**
- * Hanak Search — Masterpiece typeahead search overlay
- * Injects into any page. Activates on magnifying glass click or Ctrl+K.
+ * Hanak Search — Expandable bottom bar with typeahead
+ * Trigger: oval "Hledat" → expands left into search bar → results grow upward
  */
 (function() {
   'use strict';
 
   const API_BASE = '/api';
   const MIN_CHARS = 2;
-  const DEBOUNCE_MS = 150;
+  const DEBOUNCE_MS = 120;
   const MAX_SUGGESTIONS = 8;
+  const HANAK_ORIGIN = 'https://www.hanak-nabytek.cz';
 
   let overlay = null;
+  let bar = null;
   let input = null;
   let resultsList = null;
   let activeIndex = -1;
@@ -23,33 +25,37 @@
     overlay.id = 'hanak-search-overlay';
     overlay.innerHTML = `
       <div class="hs-backdrop"></div>
-      <div class="hs-modal">
-        <div class="hs-input-wrap">
-          <svg class="hs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input type="text" class="hs-input" placeholder="Hledejte produkty, kolekce, inspirace..." autocomplete="off" spellcheck="false">
-          <kbd class="hs-kbd">ESC</kbd>
-        </div>
-        <div class="hs-results">
-          <div class="hs-empty">Začněte psát pro vyhledávání...</div>
-        </div>
+      <div class="hs-bar">
+        <div class="hs-results"></div>
         <div class="hs-footer">
           <span class="hs-footer-hint">
             <kbd>↑↓</kbd> navigace &nbsp; <kbd>Enter</kbd> otevřít &nbsp; <kbd>Esc</kbd> zavřít
           </span>
           <span class="hs-footer-time"></span>
         </div>
+        <div class="hs-input-wrap">
+          <svg class="hs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" class="hs-input" placeholder="Hledejte produkty, kolekce, realizace..." autocomplete="off" spellcheck="false">
+          <button class="hs-close" title="Zavřít">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
       </div>
     `;
     document.body.appendChild(overlay);
 
+    bar = overlay.querySelector('.hs-bar');
     input = overlay.querySelector('.hs-input');
     resultsList = overlay.querySelector('.hs-results');
 
     // Events
     overlay.querySelector('.hs-backdrop').addEventListener('click', close);
+    overlay.querySelector('.hs-close').addEventListener('click', close);
     input.addEventListener('input', onInput);
     input.addEventListener('keydown', onKeydown);
   }
@@ -60,17 +66,22 @@
     isOpen = true;
     overlay.classList.add('hs-active');
     input.value = '';
-    resultsList.innerHTML = '<div class="hs-empty">Začněte psát pro vyhledávání...</div>';
+    resultsList.innerHTML = '';
+    resultsList.classList.remove('has-results');
     activeIndex = -1;
-    requestAnimationFrame(() => input.focus());
+    // Focus after animation
+    setTimeout(() => input.focus(), 350);
     document.body.style.overflow = 'hidden';
   }
 
   function close() {
     if (!isOpen) return;
     isOpen = false;
-    overlay.classList.remove('hs-active');
-    document.body.style.overflow = '';
+    resultsList.classList.remove('has-results');
+    setTimeout(() => {
+      overlay.classList.remove('hs-active');
+      document.body.style.overflow = '';
+    }, 100);
   }
 
   // ─── Input handling ───────────────────────────────────
@@ -79,12 +90,14 @@
     const q = input.value.trim();
 
     if (q.length < MIN_CHARS) {
-      resultsList.innerHTML = '<div class="hs-empty">Začněte psát pro vyhledávání...</div>';
+      resultsList.innerHTML = '';
+      resultsList.classList.remove('has-results');
       activeIndex = -1;
       return;
     }
 
     resultsList.innerHTML = '<div class="hs-loading"><div class="hs-spinner"></div></div>';
+    resultsList.classList.add('has-results');
     debounceTimer = setTimeout(() => fetchResults(q), DEBOUNCE_MS);
   }
 
@@ -102,6 +115,7 @@
       e.preventDefault();
       activeIndex = Math.max(activeIndex - 1, -1);
       updateActive(items);
+      if (activeIndex === -1) input.focus();
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (activeIndex >= 0 && items[activeIndex]) {
@@ -125,7 +139,8 @@
       const data = await resp.json();
       renderSuggestions(data);
     } catch (err) {
-      resultsList.innerHTML = '<div class="hs-empty hs-error">Chyba při vyhledávání</div>';
+      resultsList.innerHTML = '<div class="hs-empty">Chyba při vyhledávání</div>';
+      resultsList.classList.add('has-results');
     }
   }
 
@@ -135,32 +150,31 @@
 
     if (!data.suggestions || data.suggestions.length === 0) {
       resultsList.innerHTML = `<div class="hs-empty">Nic nenalezeno pro "${escapeHtml(data.query)}"</div>`;
+      resultsList.classList.add('has-results');
       activeIndex = -1;
       return;
     }
 
     activeIndex = -1;
-    resultsList.innerHTML = data.suggestions.map((s, i) => `
-      <a href="${escapeHtml(s.url)}" class="hs-result" data-url="${escapeHtml(s.url)}">
-        <div class="hs-result-icon">
-          ${getCategoryIcon(s.category)}
-        </div>
-        <div class="hs-result-body">
-          <div class="hs-result-title">${highlightMatch(s.title, data.query)}</div>
-          ${s.category ? `<div class="hs-result-cat">${escapeHtml(s.category)}</div>` : ''}
-        </div>
-        <svg class="hs-result-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 18l6-6-6-6"/>
-        </svg>
-      </a>
-    `).join('');
+    resultsList.classList.add('has-results');
+    resultsList.innerHTML = data.suggestions.map((s) => {
+      const thumbHtml = s.image
+        ? `<img src="${resolveImage(s.image)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<span class=hs-result-thumb-icon>📄</span>'">`
+        : `<span class="hs-result-thumb-icon">${getCategoryIcon(s.category)}</span>`;
 
-    // Click handlers
-    resultsList.querySelectorAll('.hs-result').forEach(el => {
-      el.addEventListener('click', (e) => {
-        // Let default link behavior handle it
-      });
-    });
+      return `
+        <a href="${escapeHtml(s.url)}" class="hs-result" data-url="${escapeHtml(s.url)}">
+          <div class="hs-result-thumb">${thumbHtml}</div>
+          <div class="hs-result-body">
+            <div class="hs-result-title">${highlightMatch(s.title, data.query)}</div>
+            ${s.category ? `<div class="hs-result-cat">${escapeHtml(s.category)}</div>` : ''}
+          </div>
+          <svg class="hs-result-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </a>
+      `;
+    }).join('');
   }
 
   // ─── Helpers ──────────────────────────────────────────
@@ -172,26 +186,23 @@
 
   function highlightMatch(text, query) {
     const escaped = escapeHtml(text);
-    const queryEscaped = escapeHtml(query);
-    const regex = new RegExp(`(${queryEscaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const words = query.trim().split(/\s+/).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regex = new RegExp(`(${words.join('|')})`, 'gi');
     return escaped.replace(regex, '<mark>$1</mark>');
   }
 
+  function resolveImage(url) {
+    if (url.startsWith('http')) return url;
+    return HANAK_ORIGIN + url;
+  }
+
   function getCategoryIcon(cat) {
-    const icons = {
-      'kuchyne': '🍳', 'kuchyně': '🍳',
-      'obyvaci': '🛋️', 'obývací': '🛋️',
-      'loznice': '🛏️', 'ložnice': '🛏️',
-      'koupelny': '🚿',
-      'predsin': '🚪', 'předsíň': '🚪',
-      'jidelny': '🍽️', 'jídelny': '🍽️',
-      'kolekce': '✨',
-      'inspirace': '💡',
-    };
     const lower = (cat || '').toLowerCase();
-    for (const [key, icon] of Object.entries(icons)) {
-      if (lower.includes(key)) return icon;
-    }
+    if (lower.includes('kuchyn')) return '🍳';
+    if (lower.includes('realiz')) return '🏠';
+    if (lower.includes('nabytek') || lower.includes('nábytek')) return '🪑';
+    if (lower.includes('aktualn')) return '📰';
+    if (lower.includes('developer')) return '🏗️';
     return '📄';
   }
 
@@ -203,13 +214,12 @@
     }
   });
 
-  // ─── Inject search trigger button ─────────────────────
+  // ─── Inject trigger button ────────────────────────────
   function injectTrigger() {
-    // Find existing search icon/button on the page
+    // Hijack existing search elements
     const existing = document.querySelector(
       'a[href*="search"], .search-toggle, .search-icon, [data-search], .fa-search, .fa-magnifying-glass'
     );
-    
     if (existing) {
       existing.addEventListener('click', (e) => {
         e.preventDefault();
@@ -218,14 +228,15 @@
       });
     }
 
-    // Also add floating search button
+    // Floating oval trigger
     const btn = document.createElement('button');
     btn.id = 'hanak-search-trigger';
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
         <circle cx="11" cy="11" r="8"/>
         <path d="m21 21-4.35-4.35"/>
       </svg>
+      <span>Hledat</span>
     `;
     btn.title = 'Vyhledávání (Ctrl+K)';
     btn.addEventListener('click', open);
@@ -238,5 +249,4 @@
   } else {
     injectTrigger();
   }
-
 })();

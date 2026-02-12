@@ -26,6 +26,12 @@ def extract_text_from_html(filepath: str) -> dict | None:
         print(f"  ⚠️ Error reading {filepath}: {e}")
         return None
 
+    # Filter: only Czech pages
+    html_tag = soup.find("html")
+    lang = html_tag.get("lang", "") if html_tag else ""
+    if lang and not lang.startswith("cs"):
+        return None
+
     # Remove script/style/nav/footer
     for tag in soup.find_all(["script", "style", "noscript", "iframe"]):
         tag.decompose()
@@ -42,6 +48,12 @@ def extract_text_from_html(filepath: str) -> dict | None:
     meta = soup.find("meta", attrs={"name": "description"})
     if meta and meta.get("content"):
         meta_desc = meta["content"].strip()
+
+    # OG image for thumbnails
+    og_image = ""
+    og = soup.find("meta", attrs={"property": "og:image"})
+    if og and og.get("content"):
+        og_image = og["content"].strip()
 
     # Main content text
     main = soup.find("main") or soup.find("article") or soup.find("div", {"class": re.compile(r"content|main|body", re.I)})
@@ -87,6 +99,7 @@ def extract_text_from_html(filepath: str) -> dict | None:
         "title": title or os.path.basename(filepath),
         "url": url,
         "meta_desc": meta_desc,
+        "og_image": og_image,
         "text": text,
         "chunks": chunks,
         "category": category,
@@ -150,6 +163,7 @@ def main():
                 "category": page["category"],
                 "chunk_index": i,
                 "meta_desc": page["meta_desc"][:500] if page["meta_desc"] else "",
+                "og_image": page.get("og_image", ""),
             })
             total_chunks += 1
 
