@@ -18,6 +18,7 @@ services:
       - "8091:8000"
     volumes:
       - ./chromadb_data:/app/chromadb_data
+      - ./api/main.py:/app/main.py
       - ./site:/app/site:ro
       - ./image-descriptions.json:/app/image-descriptions.json:ro
     environment:
