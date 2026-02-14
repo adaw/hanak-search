@@ -13,13 +13,70 @@ from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 
 import unicodedata
+import re
 
 def _strip_diacritics(text: str) -> str:
     """Remove diacritics for fuzzy Czech matching (kuchyne → kuchyne, kuchyně → kuchyne)."""
     nfkd = unicodedata.normalize('NFKD', text)
     return ''.join(c for c in nfkd if not unicodedata.combining(c))
 
-app = FastAPI(title="Hanak Search API", version="1.0.0")
+# Czech diacritics restoration — common words without diacritics mapped to correct form
+_CZECH_DIACRITICS_MAP = {
+    "zidle": "židle", "zidli": "židli", "zidlicka": "židlička",
+    "kuchyne": "kuchyně", "kuchyni": "kuchyni", "kuchynsky": "kuchyňský",
+    "dvere": "dveře", "dveri": "dveří",
+    "loznice": "ložnice", "loznici": "ložnici",
+    "skrin": "skříň", "skrine": "skříně", "skrini": "skříní", "skrinek": "skříněk",
+    "nabytek": "nábytek", "nabytku": "nábytku",
+    "postel": "postel", "postele": "postele",
+    "stul": "stůl", "stolu": "stolu", "stolni": "stolní",
+    "police": "police", "policky": "poličky",
+    "satna": "šatna", "satni": "šatní", "satny": "šatny",
+    "obyvaci": "obývací", "obyvak": "obývák",
+    "jidelni": "jídelní", "jidelna": "jídelna",
+    "ulozny": "úložný", "ulozne": "úložné",
+    "osvetlen": "osvětlení", "osvetleni": "osvětlení",
+    "pracovni": "pracovní", "kancelar": "kancelář", "kancelari": "kanceláři",
+    "realizace": "realizace", "interier": "interiér", "interiery": "interiéry",
+    "luxusni": "luxusní", "moderni": "moderní", "designovy": "designový",
+    "vestav": "vestavěný", "vestaveny": "vestavěný", "vestavene": "vestavěné",
+    "predsin": "předsíň", "predsine": "předsíně", "predsini": "předsíní",
+    "koupelna": "koupelna", "koupelny": "koupelny",
+    "barovy": "barový", "barova": "barová",
+    "dreveny": "dřevěný", "drevene": "dřevěné", "drevo": "dřevo",
+    "zelezny": "železný",
+    "sedy": "šedý", "sede": "šedé", "seda": "šedá",
+    "bily": "bílý", "bile": "bílé", "bila": "bílá",
+    "cerny": "černý", "cerne": "černé", "cerna": "černá",
+}
+
+def _restore_diacritics(query: str) -> str:
+    """Try to restore Czech diacritics in a query without them.
+    Returns the original query if it already has diacritics or no match found."""
+    words = query.lower().split()
+    restored = []
+    changed = False
+    for w in words:
+        if w in _CZECH_DIACRITICS_MAP:
+            restored.append(_CZECH_DIACRITICS_MAP[w])
+            changed = True
+        else:
+            restored.append(w)
+    return ' '.join(restored) if changed else query
+
+def _normalize_query(query: str) -> tuple[str, str]:
+    """Returns (primary_query, fallback_query_or_None).
+    If query has no diacritics and we can restore them, primary=restored, fallback=original.
+    Otherwise primary=original, fallback=None."""
+    stripped = _strip_diacritics(query)
+    if stripped.lower() == query.lower():
+        # No diacritics in input — try to restore
+        restored = _restore_diacritics(query)
+        if restored != query:
+            return restored, query
+    return query, None
+
+app = FastAPI(title="Hanak Search API", version="2.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -80,15 +137,38 @@ async def search(
     if collection.count() == 0:
         return SearchResponse(query=q, results=[], total=0, time_ms=0)
 
-    # Embed query
-    query_embedding = model.encode(q).tolist()
+    # Normalize query — restore diacritics if missing
+    primary_q, fallback_q = _normalize_query(q)
+
+    # Embed primary query (with restored diacritics)
+    query_embedding = model.encode(primary_q).tolist()
 
     # Search ChromaDB
+    fetch_n = limit * 2 if fallback_q else limit
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=limit,
+        n_results=fetch_n,
         include=["documents", "metadatas", "distances"],
     )
+
+    # If we have a fallback (original without diacritics), merge results
+    if fallback_q:
+        fallback_embedding = model.encode(fallback_q).tolist()
+        fallback_results = collection.query(
+            query_embeddings=[fallback_embedding],
+            n_results=fetch_n,
+            include=["documents", "metadatas", "distances"],
+        )
+        # Merge: add fallback results not already in primary
+        seen_ids = set(results["ids"][0]) if results["ids"] else set()
+        for j in range(len(fallback_results["ids"][0])):
+            rid = fallback_results["ids"][0][j]
+            if rid not in seen_ids:
+                results["ids"][0].append(rid)
+                results["documents"][0].append(fallback_results["documents"][0][j])
+                results["metadatas"][0].append(fallback_results["metadatas"][0][j])
+                results["distances"][0].append(fallback_results["distances"][0][j])
+                seen_ids.add(rid)
 
     # Parse requested types
     requested_types = set(t.strip() for t in types.split(",") if t.strip())
@@ -170,19 +250,40 @@ async def suggest(
     if collection.count() == 0:
         return {"query": q, "suggestions": [], "time_ms": 0}
 
-    query_embedding = model.encode(q).tolist()
+    # Normalize query — restore diacritics if missing
+    primary_q, fallback_q = _normalize_query(q)
+
+    query_embedding = model.encode(primary_q).tolist()
+    fetch_n = min(limit * 4, 30)
 
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=min(limit * 4, 30),  # fetch more candidates for re-ranking
+        n_results=fetch_n,
         include=["metadatas", "distances"],
     )
+
+    # Merge fallback results if available
+    if fallback_q:
+        fallback_embedding = model.encode(fallback_q).tolist()
+        fb = collection.query(
+            query_embeddings=[fallback_embedding],
+            n_results=fetch_n,
+            include=["metadatas", "distances"],
+        )
+        seen_ids = set(results["ids"][0]) if results["ids"] else set()
+        for j in range(len(fb["ids"][0])):
+            rid = fb["ids"][0][j]
+            if rid not in seen_ids:
+                results["ids"][0].append(rid)
+                results["metadatas"][0].append(fb["metadatas"][0][j])
+                results["distances"][0].append(fb["distances"][0][j])
+                seen_ids.add(rid)
 
     requested_types = set(t.strip() for t in types.split(",") if t.strip())
 
     suggestions = []
     seen_titles = set()
-    q_lower = q.lower()
+    q_lower = primary_q.lower()
     q_norm = _strip_diacritics(q_lower)
     for meta, dist in zip(results["metadatas"][0], results["distances"][0]):
         score = 1 - dist
