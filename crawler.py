@@ -19,7 +19,7 @@ DOMAIN = "www.hanak-nabytek.cz"
 SITE_DIR = Path.home() / "repos/hanak-search/site" / DOMAIN
 PROJECT_DIR = Path.home() / "repos/hanak-search"
 DELAY = 0.3
-MAX_DEPTH = 10
+MAX_DEPTH = 20
 TIMEOUT = 20
 
 # Skip these URL patterns (AJAX junk)
