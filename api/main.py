@@ -105,10 +105,11 @@ async def search(
             continue
 
         # Determine content type for filtering
+        source_type = meta.get("source_type", "html")
         cat = meta.get("category", "")
         if cat == "Obrázek":
             content_type = "image"
-        elif cat == "Dokument":
+        elif source_type == "pdf":
             content_type = "document"
         else:
             content_type = "text"
@@ -189,10 +190,11 @@ async def suggest(
             continue
 
         # Filter by content type
+        source_type = meta.get("source_type", "html")
         cat = meta.get("category", "")
         if cat == "Obrázek":
             content_type = "image"
-        elif cat == "Dokument":
+        elif source_type == "pdf":
             content_type = "document"
         else:
             content_type = "text"
