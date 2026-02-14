@@ -161,7 +161,19 @@ def main():
     if image_desc_path and os.path.exists(image_desc_path):
         import json
         with open(image_desc_path) as f:
-            image_descs = json.load(f)
+            raw = json.load(f)
+        # Support both dict-keyed-by-path and list-of-dicts formats
+        if isinstance(raw, dict):
+            image_descs = []
+            for img_path, info in raw.items():
+                filename = os.path.basename(img_path)
+                image_descs.append({
+                    "filename": filename,
+                    "description": info.get("description", ""),
+                    "path": info.get("path", img_path),
+                })
+        else:
+            image_descs = raw
         print(f"Loaded {len(image_descs)} image descriptions")
 
     # Index all chunks
@@ -172,22 +184,27 @@ def main():
 
     # Add image descriptions as searchable chunks
     for img in image_descs:
-        doc_id = hashlib.md5(f"img_{img['filename']}".encode()).hexdigest()
-        # Find which page this image belongs to (approximate by filename)
-        fname_lower = img["filename"].lower()
+        filename = img.get("filename", "unknown")
+        doc_id = hashlib.md5(f"img_{filename}".encode()).hexdigest()
         category = "Obrázek"
-        url = img.get("path", f"/fileadmin/user_upload/{img['filename']}")
-        title = f"Obrázek: {img['filename'].replace('.jpg','').replace('.png','').replace('-',' ').replace('_',' ')}"
+        url = img.get("path", f"/fileadmin/user_upload/{filename}")
+        if not url.startswith("/"):
+            url = "/" + url
+        title = f"Obrázek: {filename.replace('.jpg','').replace('.png','').replace('-',' ').replace('_',' ')}"
+        desc = img.get("description", "")
+        if not desc:
+            continue
         
-        all_docs.append(img["description"])
+        all_docs.append(desc)
         all_ids.append(doc_id)
         all_metas.append({
             "title": title,
             "url": url,
             "category": category,
             "chunk_index": 0,
-            "meta_desc": img["description"][:500],
+            "meta_desc": desc[:500],
             "og_image": url,
+            "source_type": "image",
         })
         total_chunks += 1
 
