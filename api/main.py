@@ -99,13 +99,36 @@ async def search(
         score = 1 - dist  # cosine distance → similarity
         if score < 0.15:  # threshold
             continue
+        title = meta.get("title", "Bez názvu")
+        url = meta.get("url", "#")
+        # Boosting (same logic as suggest)
+        q_lower = q.lower()
+        q_norm = _strip_diacritics(q_lower)
+        title_norm = _strip_diacritics(title.lower())
+        boost = 0.0
+        if q_norm in title_norm:
+            boost += 0.3
+        if q_lower in title.lower():
+            boost += 0.1
+        if title_norm.startswith(q_norm):
+            boost += 0.2
+        url_slug = _strip_diacritics(url.lower().rsplit('/', 1)[-1].replace('.html', ''))
+        if q_norm == url_slug:
+            boost += 0.35
+        url_depth = url.strip('/').count('/')
+        if url_depth <= 1 and q_norm in title_norm:
+            boost += 0.15
         search_results.append(SearchResult(
-            title=meta.get("title", "Bez názvu"),
-            url=meta.get("url", "#"),
+            title=title,
+            url=url,
             snippet=doc[:250] + "..." if len(doc) > 250 else doc,
-            score=round(score, 4),
+            score=round(score + boost, 4),
             category=meta.get("category", ""),
         ))
+
+    # Re-sort by boosted score
+    search_results.sort(key=lambda x: x.score, reverse=True)
+    search_results = search_results[:limit]
 
     elapsed = (time.perf_counter() - start) * 1000
 
@@ -158,6 +181,10 @@ async def suggest(
                 boost += 0.1  # extra for exact diacritics match
             if title_norm.startswith(q_norm):
                 boost += 0.2
+            # URL slug match (e.g. "kuchyne" → /nabytek/kuchyne.html)
+            url_slug = _strip_diacritics(url.lower().rsplit('/', 1)[-1].replace('.html', ''))
+            if q_norm == url_slug:
+                boost += 0.35  # strong boost for exact slug match
             # Primary category page boost (short URL = main page)
             url_depth = url.strip('/').count('/')
             if url_depth <= 1 and q_norm in title_norm:
