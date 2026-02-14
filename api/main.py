@@ -72,6 +72,7 @@ async def startup():
 async def search(
     q: str = Query(..., min_length=1, max_length=200, description="Search query"),
     limit: int = Query(10, ge=1, le=50),
+    types: str = Query("text,image,document", description="Comma-separated content types to include"),
 ):
     """Vector similarity search with instant results."""
     start = time.perf_counter()
@@ -89,6 +90,9 @@ async def search(
         include=["documents", "metadatas", "distances"],
     )
 
+    # Parse requested types
+    requested_types = set(t.strip() for t in types.split(",") if t.strip())
+
     # Format results
     search_results = []
     for i, (doc, meta, dist) in enumerate(zip(
@@ -99,6 +103,19 @@ async def search(
         score = 1 - dist  # cosine distance → similarity
         if score < 0.15:  # threshold
             continue
+
+        # Determine content type for filtering
+        cat = meta.get("category", "")
+        if cat == "Obrázek":
+            content_type = "image"
+        elif cat == "Dokument":
+            content_type = "document"
+        else:
+            content_type = "text"
+
+        if content_type not in requested_types:
+            continue
+
         title = meta.get("title", "Bez názvu")
         url = meta.get("url", "#")
         # Boosting (same logic as suggest)
@@ -144,6 +161,7 @@ async def search(
 async def suggest(
     q: str = Query(..., min_length=2, max_length=100),
     limit: int = Query(5, ge=1, le=15),
+    types: str = Query("text,image,document", description="Comma-separated content types to include"),
 ):
     """Fast typeahead suggestions — returns titles + URLs only."""
     start = time.perf_counter()
@@ -159,6 +177,8 @@ async def suggest(
         include=["metadatas", "distances"],
     )
 
+    requested_types = set(t.strip() for t in types.split(",") if t.strip())
+
     suggestions = []
     seen_titles = set()
     q_lower = q.lower()
@@ -167,6 +187,18 @@ async def suggest(
         score = 1 - dist
         if score < 0.2:
             continue
+
+        # Filter by content type
+        cat = meta.get("category", "")
+        if cat == "Obrázek":
+            content_type = "image"
+        elif cat == "Dokument":
+            content_type = "document"
+        else:
+            content_type = "text"
+        if content_type not in requested_types:
+            continue
+
         title = meta.get("title", "")
         url = meta.get("url", "#")
         if title and title not in seen_titles:

@@ -175,6 +175,60 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ─── Filters ───────────────────────────────────────── */
+.hs-filters {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 8px;
+  width: 520px;
+  max-width: calc(100vw - 48px);
+}
+
+.hs-filter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.hs-filter:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.hs-filter.active {
+  border-color: rgba(197, 163, 106, 0.4);
+  background: rgba(197, 163, 106, 0.1);
+  color: #c5a36a;
+}
+
+.hs-filter.active:hover {
+  border-color: rgba(197, 163, 106, 0.6);
+  background: rgba(197, 163, 106, 0.15);
+}
+
+.hs-filter svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.hs-filter.active svg {
+  opacity: 1;
+}
+
 /* ─── Search Bar ────────────────────────────────────── */
 .hs-bar {
   width: 520px;
@@ -435,8 +489,14 @@
   }
 
   .hs-bar,
-  .hs-results-panel {
+  .hs-results-panel,
+  .hs-filters {
     width: calc(100vw - 24px);
+  }
+
+  .hs-filter {
+    padding: 5px 10px;
+    font-size: 11px;
   }
 
   .hs-results-panel.has-results {

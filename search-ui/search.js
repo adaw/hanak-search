@@ -19,6 +19,7 @@
   let debounceTimer = null;
   let isOpen = false;
   let isAnimating = false;
+  let activeFilters = { text: true, image: true, document: true };
 
   // ─── Create DOM ───────────────────────────────────────
   function createContainer() {
@@ -33,6 +34,20 @@
           </span>
           <span class="hs-footer-time"></span>
         </div>
+      </div>
+      <div class="hs-filters">
+        <button class="hs-filter active" data-type="text">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 7h16M4 12h10M4 17h12"/></svg>
+          Texty
+        </button>
+        <button class="hs-filter active" data-type="image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          Obrázky
+        </button>
+        <button class="hs-filter active" data-type="document">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          Dokumenty
+        </button>
       </div>
       <div class="hs-bar">
         <svg class="hs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -56,6 +71,21 @@
     container.querySelector('.hs-close').addEventListener('click', close);
     input.addEventListener('input', onInput);
     input.addEventListener('keydown', onKeydown);
+
+    // Filter toggle handlers
+    container.querySelectorAll('.hs-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.dataset.type;
+        activeFilters[type] = !activeFilters[type];
+        btn.classList.toggle('active', activeFilters[type]);
+        // Re-search with current query
+        const q = input.value.trim();
+        if (q.length >= MIN_CHARS) {
+          clearTimeout(debounceTimer);
+          fetchResults(q);
+        }
+      });
+    });
 
     document.addEventListener('click', (e) => {
       if (isOpen && !container.contains(e.target) && e.target !== trigger) {
@@ -163,7 +193,8 @@
   // ─── API calls ────────────────────────────────────────
   async function fetchResults(query) {
     try {
-      const resp = await fetch(`${API_BASE}/suggest?q=${encodeURIComponent(query)}&limit=${MAX_SUGGESTIONS}`);
+      const typesParam = Object.entries(activeFilters).filter(([,v]) => v).map(([k]) => k).join(',');
+      const resp = await fetch(`${API_BASE}/suggest?q=${encodeURIComponent(query)}&limit=${MAX_SUGGESTIONS}&types=${encodeURIComponent(typesParam)}`);
       const data = await resp.json();
       renderSuggestions(data);
     } catch (err) {
