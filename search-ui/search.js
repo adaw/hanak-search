@@ -7,7 +7,7 @@
   const API_BASE = '/api';
   const MIN_CHARS = 2;
   const DEBOUNCE_MS = 120;
-  const MAX_SUGGESTIONS = 8;
+  const MAX_SUGGESTIONS = 20;
   const HANAK_ORIGIN = 'https://www.hanak-nabytek.cz';
 
   let container = null;
