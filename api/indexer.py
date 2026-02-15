@@ -256,6 +256,7 @@ def main():
                 "meta_desc": page["meta_desc"][:500] if page["meta_desc"] else "",
                 "og_image": page.get("og_image", ""),
                 "first_image": page.get("first_image", ""),
+                "source_type": "html",
             })
             total_chunks += 1
 

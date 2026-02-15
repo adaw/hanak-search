@@ -278,13 +278,32 @@ async def suggest(
     primary_q, fallback_q = _normalize_query(q)
 
     query_embedding = model.encode(primary_q).tolist()
-    fetch_n = min(limit * 6, 80)  # fetch more to allow text results to surface after boosting
+    fetch_n = min(limit * 3, 60)
 
-    results = collection.query(
+    # Fetch text and image results separately to ensure text surfaces
+    results_text = collection.query(
         query_embeddings=[query_embedding],
         n_results=fetch_n,
-        include=["metadatas", "distances"],
+        include=["metadatas", "distances", "documents"],
+        where={"source_type": "html"},
     )
+    results_img = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=fetch_n,
+        include=["metadatas", "distances", "documents"],
+        where={"source_type": "image"},
+    )
+    # Merge: text first, then images (deduped)
+    results = {"ids": [[]], "metadatas": [[]], "distances": [[]]}
+    seen = set()
+    for src in [results_text, results_img]:
+        for j in range(len(src["ids"][0])):
+            rid = src["ids"][0][j]
+            if rid not in seen:
+                seen.add(rid)
+                results["ids"][0].append(rid)
+                results["metadatas"][0].append(src["metadatas"][0][j])
+                results["distances"][0].append(src["distances"][0][j])
 
     # Merge fallback results if available
     if fallback_q:
