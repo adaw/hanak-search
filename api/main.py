@@ -206,11 +206,11 @@ async def search(
         title_norm = _strip_diacritics(title.lower())
         boost = 0.0
 
-        # Text pages get inherent boost over images
+        # Text pages get strong inherent boost over images
         if content_type == "text":
-            boost += 0.15
+            boost += 0.25
         elif content_type == "image":
-            boost -= 0.05
+            boost -= 0.15
 
         # For images, match against AI description, not filename
         if content_type == "image":
@@ -334,11 +334,11 @@ async def suggest(
             title_norm = _strip_diacritics(title_lower)
             boost = 0.0
 
-            # Text pages get inherent boost over images
+            # Text pages get strong inherent boost over images
             if content_type == "text":
-                boost += 0.15
+                boost += 0.25
             elif content_type == "image":
-                boost -= 0.05  # slight penalty — images support text, not replace
+                boost -= 0.15  # images are supplementary, not primary results
 
             # For images, match against AI description (meta_desc), not filename-based title
             if content_type == "image":
