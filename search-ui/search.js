@@ -309,8 +309,12 @@
   }
 
   function resolveImage(url) {
+    if (!url) return '';
     if (url.startsWith('http')) return url;
-    return HANAK_ORIGIN + url;
+    // Strip leading ../ and ensure starts with /
+    let clean = url.replace(/^(\.\.\/)+/, '/').replace(/^\/+/, '/');
+    if (!clean.startsWith('/')) clean = '/' + clean;
+    return HANAK_ORIGIN + clean;
   }
 
   function getCategoryIcon(cat) {

@@ -64,7 +64,16 @@ def extract_text_from_html(filepath: str) -> dict | None:
             continue
         # Prefer fileadmin images (product photos)
         if "fileadmin" in src or src.endswith(('.jpg', '.jpeg', '.png', '.webp')):
-            first_image = src
+            # Normalize relative paths to absolute
+            if src.startswith("../") or src.startswith("./"):
+                # Resolve relative to the HTML file's directory
+                file_dir = os.path.dirname(os.path.relpath(filepath, SITE_DIR))
+                resolved = os.path.normpath(os.path.join(file_dir, src))
+                first_image = "/" + resolved.replace("\\", "/")
+            elif not src.startswith("/") and not src.startswith("http"):
+                first_image = "/" + src
+            else:
+                first_image = src
             break
 
     # Main content text
