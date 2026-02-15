@@ -89,6 +89,8 @@
 
     document.addEventListener('click', (e) => {
       if (isOpen && !container.contains(e.target) && e.target !== trigger) {
+        // Don't close search if a lightbox is open or being dismissed
+        if (document.querySelector('.hs-lightbox')) return;
         close();
       }
     });
@@ -283,15 +285,17 @@
       }
     });
 
-    // Close on Escape
+    // Close on Escape (stop propagation so search stays open)
     const escHandler = (e) => {
       if (e.key === 'Escape') {
+        e.stopPropagation();
+        e.preventDefault();
         lb.classList.remove('hs-lb-active');
         setTimeout(() => lb.remove(), 250);
-        document.removeEventListener('keydown', escHandler);
+        document.removeEventListener('keydown', escHandler, true);
       }
     };
-    document.addEventListener('keydown', escHandler);
+    document.addEventListener('keydown', escHandler, true);
   }
 
   // ─── Helpers ──────────────────────────────────────────
