@@ -336,11 +336,17 @@ async def suggest(
             # Deprioritize foreign language pages
             if any(f"/{lang}/" in url or url.startswith(f"/{lang}?") for lang in ("de", "fr", "en", "ru")):
                 boost -= 0.15
+            # Best thumbnail: og_image > first_image > URL for image results
+            image_url = meta.get("og_image", "")
+            if not image_url:
+                image_url = meta.get("first_image", "")
+            if not image_url and content_type == "image":
+                image_url = url
             suggestions.append({
                 "title": title,
                 "url": url,
                 "category": meta.get("category", ""),
-                "image": meta.get("og_image", ""),
+                "image": image_url,
                 "score": round(score + boost, 4),
             })
 

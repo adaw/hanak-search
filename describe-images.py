@@ -1,175 +1,100 @@
-#!/usr/bin/env python3
-"""
-Hanak Image Describer — uses Qwen2.5VL on Mac Studio (Ollama) to describe product images.
-Focuses on PRIMARY objects (furniture, kitchen, etc.), not small details.
+#!/usr/bin/env python3 -u
+"""Batch describe images using Ollama vision model."""
+import json, base64, os, sys, time, subprocess, urllib.request, io
+from PIL import Image
 
-Usage:
-    python3 describe-images.py [--limit N] [--output image-descriptions.json]
-"""
-
-import argparse
-import base64
-import json
-import os
-import sys
-import time
-from pathlib import Path
-
-import requests
-
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://mac.local:11434")
+OLLAMA_URL = "http://100.124.94.31:11434/api/chat"
 MODEL = "qwen2.5vl:7b"
-SITE_DIR = Path(__file__).parent / "site" / "www.hanak-nabytek.cz"
-OUTPUT_FILE = Path(__file__).parent / "image-descriptions.json"
+PROMPT = "Popiš tento obrázek nábytku/interiéru česky. Zaměř se na: typ nábytku, materiály, barvy, styl designu, prostor (kuchyně/ložnice/obývák). Max 2-3 věty."
+SITE_DIR = "site/www.hanak-nabytek.cz"
+DESC_FILE = "image-descriptions.json"
+BATCH_SIZE = 50
+LOG_FILE = "/Users/lex/.openclaw/workspace/memory/2026-02-15.md"
+RESIZE_PX = 512
 
-# Skip patterns — logos, icons, favicons, tiny UI elements
-SKIP_PATTERNS = [
-    "/themes/", "/favicon", "/logo", "/icon", "/flags/",
-    "/typo3temp/", "/typo3conf/", "/_processed_/",
-    "placeholder", "loading", "arrow", "close", "menu",
-    "facebook", "instagram", "youtube", "linkedin", "twitter",
-    "cookie", "gdpr", "banner",
-]
+def log(msg):
+    sys.stderr.write(msg + "\n")
+    sys.stderr.flush()
+    with open(LOG_FILE, "a") as f:
+        f.write(msg + "\n")
 
-# Only process these extensions
-IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+def find_missing_images():
+    with open(DESC_FILE) as f:
+        existing = json.load(f)
+    existing_keys = set(existing.keys())
+    
+    result = subprocess.run(
+        ["find", SITE_DIR, "-type", "f", "(", "-name", "*.jpg", "-o", "-name", "*.jpeg", 
+         "-o", "-name", "*.png", "-o", "-name", "*.webp", ")", "-size", "+20k"],
+        capture_output=True, text=True
+    )
+    all_files = [l for l in result.stdout.strip().split("\n") if l]
+    
+    missing = []
+    for fp in all_files:
+        key = fp.replace("site/www.hanak-nabytek.cz", "")
+        if key not in existing_keys:
+            missing.append((fp, key))
+    
+    return missing, existing
 
-# Minimum file size (skip tiny images — icons, spacers)
-MIN_SIZE_KB = 30
-
-PROMPT = """Popis tento obrázek nábytku/interiéru v 1-2 větách česky.
-Zaměř se POUZE na hlavní předměty — jaký nábytek je na obrázku (kuchyně, postel, židle, skříň, stůl, dveře atd.).
-Ignoruj drobné detaily jako zásuvky, kliky, dekorace.
-Uveď barvu/materiál hlavního nábytku pokud je zřejmý.
-Odpověz POUZE popisem, žádné úvody."""
-
-
-def should_process(path: Path) -> bool:
-    """Check if image should be processed."""
-    if path.suffix.lower() not in IMAGE_EXTENSIONS:
-        return False
-    if path.stat().st_size < MIN_SIZE_KB * 1024:
-        return False
-    path_str = str(path).lower()
-    for pattern in SKIP_PATTERNS:
-        if pattern in path_str:
-            return False
-    return True
-
-
-def describe_image(image_path: Path) -> str | None:
-    """Send image to Qwen2.5VL via Ollama and get description."""
-    try:
-        with open(image_path, "rb") as f:
-            image_data = base64.b64encode(f.read()).decode("utf-8")
-
-        resp = requests.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={
-                "model": MODEL,
-                "prompt": PROMPT,
-                "images": [image_data],
-                "stream": False,
-                "options": {
-                    "temperature": 0.3,
-                    "num_predict": 150,
-                },
-            },
-            timeout=120,
-        )
-        resp.raise_for_status()
-        return resp.json().get("response", "").strip()
-    except Exception as e:
-        print(f"  ❌ Error: {e}", file=sys.stderr)
-        return None
-
-
-def get_relative_url(image_path: Path) -> str:
-    """Convert local path to relative URL."""
-    try:
-        return "/" + str(image_path.relative_to(SITE_DIR))
-    except ValueError:
-        return str(image_path)
-
+def describe_image(filepath):
+    img = Image.open(filepath)
+    img.thumbnail((RESIZE_PX, RESIZE_PX))
+    if img.mode in ('RGBA', 'P'):
+        img = img.convert('RGB')
+    buf = io.BytesIO()
+    img.save(buf, format='JPEG', quality=80)
+    b64 = base64.b64encode(buf.getvalue()).decode()
+    
+    payload = json.dumps({
+        "model": MODEL,
+        "messages": [{"role": "user", "content": PROMPT, "images": [b64]}],
+        "stream": False,
+        "options": {"num_predict": 200}
+    })
+    
+    req = urllib.request.Request(OLLAMA_URL, data=payload.encode(), 
+                                 headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = json.loads(resp.read())
+        return data["message"]["content"]
 
 def main():
-    parser = argparse.ArgumentParser(description="Describe Hanak product images with Qwen2.5VL")
-    parser.add_argument("--limit", type=int, default=0, help="Max images to process (0=all)")
-    parser.add_argument("--output", default=str(OUTPUT_FILE), help="Output JSON file")
-    parser.add_argument("--resume", action="store_true", help="Skip already described images")
-    args = parser.parse_args()
-
-    # Load existing descriptions if resuming
-    existing = {}
-    if args.resume and os.path.exists(args.output):
-        with open(args.output) as f:
-            existing = json.load(f)
-        print(f"📂 Loaded {len(existing)} existing descriptions")
-
-    # Find all processable images
-    all_images = sorted(SITE_DIR.rglob("*"))
-    images = [p for p in all_images if p.is_file() and should_process(p)]
-    print(f"📸 Found {len(images)} images to describe (from {len(all_images)} total files)")
-
-    if args.limit > 0:
-        images = images[:args.limit]
-        print(f"   Limiting to {args.limit}")
-
-    # Check Ollama connectivity
-    try:
-        r = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
-        models = [m["name"] for m in r.json().get("models", [])]
-        if MODEL not in models and f"{MODEL}:latest" not in models:
-            print(f"⚠️  Model {MODEL} not found. Available: {models}")
-            sys.exit(1)
-        print(f"✅ Ollama connected, model {MODEL} ready")
-    except Exception as e:
-        print(f"❌ Cannot reach Ollama at {OLLAMA_URL}: {e}")
-        sys.exit(1)
-
-    # Process images
-    descriptions = dict(existing)
-    processed = 0
-    skipped = 0
-    start_time = time.time()
-
-    for i, img_path in enumerate(images):
-        url = get_relative_url(img_path)
-
-        if args.resume and url in existing:
-            skipped += 1
-            continue
-
-        print(f"[{i+1}/{len(images)}] {url} ({img_path.stat().st_size // 1024}KB)...", end=" ", flush=True)
-
-        desc = describe_image(img_path)
-        if desc:
-            descriptions[url] = {
-                "description": desc,
-                "file_size_kb": img_path.stat().st_size // 1024,
-                "path": str(img_path.relative_to(SITE_DIR)),
-            }
-            processed += 1
-            print(f"✅ {desc[:80]}")
-        else:
-            print("⏭️ skipped")
-
-        # Save periodically (every 10 images)
-        if processed > 0 and processed % 10 == 0:
-            with open(args.output, "w") as f:
-                json.dump(descriptions, f, ensure_ascii=False, indent=2)
-            elapsed = time.time() - start_time
-            rate = processed / elapsed * 60
-            print(f"   💾 Saved ({processed} done, {rate:.1f}/min)")
-
-    # Final save
-    with open(args.output, "w") as f:
-        json.dump(descriptions, f, ensure_ascii=False, indent=2)
-
-    elapsed = time.time() - start_time
-    print(f"\n✅ Done! {processed} described, {skipped} skipped, {elapsed:.0f}s total")
-    print(f"   Output: {args.output}")
-
+    missing, existing = find_missing_images()
+    total = len(missing)
+    log(f"\n## Image descriptions batch - {time.strftime('%H:%M')}")
+    log(f"- Missing: {total}, Existing: {len(existing)}")
+    
+    if total == 0:
+        log("Nothing to do!")
+        return
+    
+    done = 0
+    errors = 0
+    start = time.time()
+    
+    for i, (filepath, key) in enumerate(missing):
+        t0 = time.time()
+        try:
+            desc = describe_image(filepath)
+            existing[key] = desc
+            done += 1
+        except Exception as e:
+            errors += 1
+            dt = time.time() - t0
+            log(f"  ❌ ({dt:.1f}s) {key[-60:]}: {e}")
+        
+        if (i + 1) % BATCH_SIZE == 0 or i == total - 1:
+            with open(DESC_FILE, "w") as f:
+                json.dump(existing, f, ensure_ascii=False, indent=2)
+            elapsed = time.time() - start
+            rate = (done + errors) / elapsed if elapsed > 0 else 0
+            eta = (total - i - 1) / rate / 60 if rate > 0 else 0
+            log(f"  ✅ {i+1}/{total}. +{done} ok, {errors} err. {rate:.1f} img/s, ETA: {eta:.0f}min")
+    
+    elapsed = time.time() - start
+    log(f"- **Done!** +{done}, {errors} errors. Total: {len(existing)}. Time: {elapsed/60:.0f}min")
 
 if __name__ == "__main__":
     main()
