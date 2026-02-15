@@ -149,6 +149,10 @@ def main():
     # Load image descriptions if available
     image_desc_path = None
     for candidate in [
+        os.path.join(os.path.dirname(SITE_DIR), "image-descriptions-quality.json"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "image-descriptions-quality.json"),
+        "/app/image-descriptions-quality.json",
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "image-descriptions-quality.json"),
         os.path.join(os.path.dirname(SITE_DIR), "image-descriptions.json"),
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "image-descriptions.json"),
         "/app/image-descriptions.json",
@@ -185,7 +189,8 @@ def main():
     # Add image descriptions as searchable chunks
     for img in image_descs:
         filename = img.get("filename", "unknown")
-        doc_id = hashlib.md5(f"img_{filename}".encode()).hexdigest()
+        img_path = img.get("path", filename)
+        doc_id = hashlib.md5(f"img_{img_path}".encode()).hexdigest()
         category = "Obrázek"
         url = img.get("path", f"/fileadmin/user_upload/{filename}")
         if not url.startswith("/"):
@@ -222,6 +227,20 @@ def main():
                 "og_image": page.get("og_image", ""),
             })
             total_chunks += 1
+
+    # Deduplicate by ID
+    seen_ids = set()
+    deduped = []
+    for idx in range(len(all_ids)):
+        if all_ids[idx] not in seen_ids:
+            seen_ids.add(all_ids[idx])
+            deduped.append(idx)
+    if len(deduped) < len(all_ids):
+        print(f"Removed {len(all_ids) - len(deduped)} duplicate IDs")
+        all_docs = [all_docs[i] for i in deduped]
+        all_ids = [all_ids[i] for i in deduped]
+        all_metas = [all_metas[i] for i in deduped]
+        total_chunks = len(all_ids)
 
     print(f"Embedding {total_chunks} chunks...")
 

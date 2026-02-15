@@ -20,6 +20,7 @@ services:
       - ./chromadb_data:/app/chromadb_data
       - ./api/main.py:/app/main.py
       - ./site:/app/site:ro
+      - ./image-descriptions-quality.json:/app/image-descriptions-quality.json:ro
       - ./image-descriptions.json:/app/image-descriptions.json:ro
     environment:
       - CHROMADB_PATH=/app/chromadb_data
