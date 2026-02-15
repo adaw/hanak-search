@@ -259,8 +259,7 @@
       openLightbox(image, title, url);
     } else if (url) {
       // Pages and documents: navigate directly
-      const fullUrl = url.startsWith('http') ? url : 'https://www.hanak-nabytek.cz' + url;
-      window.open(fullUrl, '_blank');
+      window.open(url, '_blank');
     }
   }
 
@@ -322,7 +321,7 @@
     // Strip leading ../ and ensure starts with /
     let clean = url.replace(/^(\.\.\/)+/, '/').replace(/^\/+/, '/');
     if (!clean.startsWith('/')) clean = '/' + clean;
-    return HANAK_ORIGIN + clean;
+    return clean;  // relative — served by same nginx
   }
 
   function getCategoryIcon(cat) {
