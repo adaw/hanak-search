@@ -263,42 +263,89 @@
     }
   }
 
+  function getImageResults() {
+    // Collect all image-category results from current search
+    const items = resultsScroll.querySelectorAll('.hs-result[data-category="Obrázek"]');
+    return Array.from(items).map(el => ({
+      image: el.dataset.image,
+      title: el.dataset.title,
+      url: el.dataset.url,
+    })).filter(r => r.image);
+  }
+
   function openLightbox(imageSrc, title, pageUrl) {
+    const images = getImageResults();
+    let currentIdx = images.findIndex(r => r.image === imageSrc);
+    if (currentIdx === -1) currentIdx = 0;
+
     const lb = document.createElement('div');
     lb.className = 'hs-lightbox';
-    lb.innerHTML = `
-      <div class="hs-lightbox-content">
-        <img class="hs-lightbox-img" src="${imageSrc}" alt="${escapeHtml(title)}">
-        <div class="hs-lightbox-info">
-          <div class="hs-lightbox-title">${escapeHtml(title)}</div>
-          <a class="hs-lightbox-link" href="${escapeHtml(pageUrl)}" target="_blank">Otevřít stránku →</a>
-        </div>
-      </div>
-    `;
     document.body.appendChild(lb);
 
-    // Fade in
+    function renderCurrent() {
+      const item = images[currentIdx] || { image: imageSrc, title, url: pageUrl };
+      const hasPrev = currentIdx > 0;
+      const hasNext = currentIdx < images.length - 1;
+      lb.innerHTML = `
+        <div class="hs-lightbox-content">
+          ${hasPrev ? '<button class="hs-lb-nav hs-lb-prev" title="Předchozí (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="28" height="28"><path d="M15 18l-6-6 6-6"/></svg></button>' : ''}
+          <img class="hs-lightbox-img" src="${item.image}" alt="${escapeHtml(item.title)}">
+          ${hasNext ? '<button class="hs-lb-nav hs-lb-next" title="Další (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="28" height="28"><path d="M9 18l6-6-6-6"/></svg></button>' : ''}
+          <div class="hs-lightbox-info">
+            <div class="hs-lightbox-title">${escapeHtml(item.title)}</div>
+            <div class="hs-lightbox-meta">
+              <span class="hs-lb-counter">${currentIdx + 1} / ${images.length}</span>
+              <a class="hs-lightbox-link" href="${escapeHtml(item.url)}" target="_blank">Otevřít stránku →</a>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Nav button handlers
+      const prevBtn = lb.querySelector('.hs-lb-prev');
+      const nextBtn = lb.querySelector('.hs-lb-next');
+      if (prevBtn) prevBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(-1); });
+      if (nextBtn) nextBtn.addEventListener('click', (e) => { e.stopPropagation(); navigate(1); });
+    }
+
+    function navigate(delta) {
+      const newIdx = currentIdx + delta;
+      if (newIdx >= 0 && newIdx < images.length) {
+        currentIdx = newIdx;
+        renderCurrent();
+      }
+    }
+
+    function closeLb() {
+      lb.classList.remove('hs-lb-active');
+      setTimeout(() => lb.remove(), 250);
+      document.removeEventListener('keydown', keyHandler, true);
+    }
+
+    const keyHandler = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        e.preventDefault();
+        closeLb();
+      } else if (e.key === 'ArrowLeft') {
+        e.stopPropagation();
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === 'ArrowRight') {
+        e.stopPropagation();
+        e.preventDefault();
+        navigate(1);
+      }
+    };
+    document.addEventListener('keydown', keyHandler, true);
+
+    renderCurrent();
     requestAnimationFrame(() => lb.classList.add('hs-lb-active'));
 
     // Close on backdrop click
     lb.addEventListener('click', (e) => {
-      if (e.target === lb) {
-        lb.classList.remove('hs-lb-active');
-        setTimeout(() => lb.remove(), 250);
-      }
+      if (e.target === lb) closeLb();
     });
-
-    // Close on Escape (stop propagation so search stays open)
-    const escHandler = (e) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        e.preventDefault();
-        lb.classList.remove('hs-lb-active');
-        setTimeout(() => lb.remove(), 250);
-        document.removeEventListener('keydown', escHandler, true);
-      }
-    };
-    document.addEventListener('keydown', escHandler, true);
   }
 
   // ─── Helpers ──────────────────────────────────────────

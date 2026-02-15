@@ -404,6 +404,7 @@
 }
 
 .hs-lightbox-content {
+  position: relative;
   max-width: 85vw;
   max-height: 80vh;
   display: flex;
@@ -443,6 +444,52 @@
 .hs-lightbox-link:hover {
   opacity: 1;
   text-decoration: underline;
+}
+
+.hs-lightbox-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.hs-lb-counter {
+  color: rgba(255,255,255,0.4);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hs-lb-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+  padding: 0;
+}
+
+.hs-lb-nav:hover {
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  border-color: rgba(197,163,106,0.5);
+}
+
+.hs-lb-prev { left: -60px; }
+.hs-lb-next { right: -60px; }
+
+@media (max-width: 768px) {
+  .hs-lb-prev { left: 8px; }
+  .hs-lb-next { right: 8px; }
 }
 
 /* ─── Empty / Loading ───────────────────────────────── */
