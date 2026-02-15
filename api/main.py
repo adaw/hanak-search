@@ -205,17 +205,32 @@ async def search(
         q_norm = _strip_diacritics(q_lower)
         title_norm = _strip_diacritics(title.lower())
         boost = 0.0
-        if q_norm in title_norm:
+
+        # Text pages get inherent boost over images
+        if content_type == "text":
+            boost += 0.15
+        elif content_type == "image":
+            boost -= 0.05
+
+        # For images, match against AI description, not filename
+        if content_type == "image":
+            match_text = _strip_diacritics(meta.get("meta_desc", "").lower())
+            match_text_raw = meta.get("meta_desc", "").lower()
+        else:
+            match_text = title_norm
+            match_text_raw = title.lower()
+
+        if q_norm in match_text:
             boost += 0.3
-        if q_lower in title.lower():
+        if q_lower in match_text_raw:
             boost += 0.1
-        if title_norm.startswith(q_norm):
+        if match_text.startswith(q_norm):
             boost += 0.2
         url_slug = _strip_diacritics(url.lower().rsplit('/', 1)[-1].replace('.html', ''))
         if q_norm == url_slug:
             boost += 0.35
         url_depth = url.strip('/').count('/')
-        if url_depth <= 1 and q_norm in title_norm:
+        if url_depth <= 1 and q_norm in match_text:
             boost += 0.15
         # Get best thumbnail: og_image > first_image > image description path
         image_url = meta.get("og_image", "")
@@ -318,12 +333,27 @@ async def suggest(
             title_lower = title.lower()
             title_norm = _strip_diacritics(title_lower)
             boost = 0.0
-            # Exact diacritics-insensitive match in title
-            if q_norm in title_norm:
+
+            # Text pages get inherent boost over images
+            if content_type == "text":
+                boost += 0.15
+            elif content_type == "image":
+                boost -= 0.05  # slight penalty — images support text, not replace
+
+            # For images, match against AI description (meta_desc), not filename-based title
+            if content_type == "image":
+                match_text = _strip_diacritics(meta.get("meta_desc", "").lower())
+                match_text_raw = meta.get("meta_desc", "").lower()
+            else:
+                match_text = title_norm
+                match_text_raw = title_lower
+
+            # Exact diacritics-insensitive match
+            if q_norm in match_text:
                 boost += 0.3
-            if q_lower in title_lower:
+            if q_lower in match_text_raw:
                 boost += 0.1  # extra for exact diacritics match
-            if title_norm.startswith(q_norm):
+            if match_text.startswith(q_norm):
                 boost += 0.2
             # URL slug match (e.g. "kuchyne" → /nabytek/kuchyne.html)
             url_slug = _strip_diacritics(url.lower().rsplit('/', 1)[-1].replace('.html', ''))
@@ -331,7 +361,7 @@ async def suggest(
                 boost += 0.35  # strong boost for exact slug match
             # Primary category page boost (short URL = main page)
             url_depth = url.strip('/').count('/')
-            if url_depth <= 1 and q_norm in title_norm:
+            if url_depth <= 1 and q_norm in match_text:
                 boost += 0.15
             # Deprioritize foreign language pages
             if any(f"/{lang}/" in url or url.startswith(f"/{lang}?") for lang in ("de", "fr", "en", "ru")):
