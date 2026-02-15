@@ -184,10 +184,18 @@ def main():
             image_descs = []
             for img_path, info in raw.items():
                 filename = os.path.basename(img_path)
+                if isinstance(info, str):
+                    desc = info
+                    path = img_path
+                elif isinstance(info, dict):
+                    desc = info.get("description", "")
+                    path = info.get("path", img_path)
+                else:
+                    continue
                 image_descs.append({
                     "filename": filename,
-                    "description": info.get("description", ""),
-                    "path": info.get("path", img_path),
+                    "description": desc,
+                    "path": path,
                 })
         else:
             image_descs = raw
