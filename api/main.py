@@ -145,7 +145,7 @@ async def search(
     query_embedding = model.encode(primary_q).tolist()
 
     # Search ChromaDB
-    fetch_n = limit * 2 if fallback_q else limit
+    fetch_n = max(limit * 4, 40) if fallback_q else max(limit * 3, 30)  # fetch more for boosting rerank
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=fetch_n,
@@ -278,7 +278,7 @@ async def suggest(
     primary_q, fallback_q = _normalize_query(q)
 
     query_embedding = model.encode(primary_q).tolist()
-    fetch_n = min(limit * 4, 30)
+    fetch_n = min(limit * 6, 80)  # fetch more to allow text results to surface after boosting
 
     results = collection.query(
         query_embeddings=[query_embedding],
