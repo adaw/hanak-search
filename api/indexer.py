@@ -55,6 +55,18 @@ def extract_text_from_html(filepath: str) -> dict | None:
     if og and og.get("content"):
         og_image = og["content"].strip()
 
+    # First big image as fallback thumbnail
+    first_image = ""
+    for img_tag in soup.find_all("img", src=True):
+        src = img_tag["src"].strip()
+        # Skip tiny icons, logos, spacers
+        if any(skip in src.lower() for skip in ["icon", "logo", "spacer", "pixel", "blank", ".svg", "data:image"]):
+            continue
+        # Prefer fileadmin images (product photos)
+        if "fileadmin" in src or src.endswith(('.jpg', '.jpeg', '.png', '.webp')):
+            first_image = src
+            break
+
     # Main content text
     main = soup.find("main") or soup.find("article") or soup.find("div", {"class": re.compile(r"content|main|body", re.I)})
     if main:
@@ -100,6 +112,7 @@ def extract_text_from_html(filepath: str) -> dict | None:
         "url": url,
         "meta_desc": meta_desc,
         "og_image": og_image,
+        "first_image": first_image,
         "text": text,
         "chunks": chunks,
         "category": category,
@@ -225,6 +238,7 @@ def main():
                 "chunk_index": i,
                 "meta_desc": page["meta_desc"][:500] if page["meta_desc"] else "",
                 "og_image": page.get("og_image", ""),
+                "first_image": page.get("first_image", ""),
             })
             total_chunks += 1
 

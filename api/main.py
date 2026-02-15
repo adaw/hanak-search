@@ -98,6 +98,7 @@ class SearchResult(BaseModel):
     snippet: str
     score: float
     category: str = ""
+    image: str = ""
 
 
 class SearchResponse(BaseModel):
@@ -216,12 +217,20 @@ async def search(
         url_depth = url.strip('/').count('/')
         if url_depth <= 1 and q_norm in title_norm:
             boost += 0.15
+        # Get best thumbnail: og_image > first_image > image description path
+        image_url = meta.get("og_image", "")
+        if not image_url:
+            image_url = meta.get("first_image", "")
+        if not image_url and cat == "Obrázek":
+            image_url = url  # For image results, the URL IS the image
+
         search_results.append(SearchResult(
             title=title,
             url=url,
             snippet=doc[:250] + "..." if len(doc) > 250 else doc,
             score=round(score + boost, 4),
             category=meta.get("category", ""),
+            image=image_url,
         ))
 
     # Re-sort by boosted score
