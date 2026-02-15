@@ -250,7 +250,7 @@ async def search(
 @app.get("/suggest")
 async def suggest(
     q: str = Query(..., min_length=2, max_length=100),
-    limit: int = Query(5, ge=1, le=15),
+    limit: int = Query(5, ge=1, le=50),
     types: str = Query("text,image,document", description="Comma-separated content types to include"),
 ):
     """Fast typeahead suggestions — returns titles + URLs only."""
