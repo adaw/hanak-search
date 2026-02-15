@@ -227,7 +227,7 @@
       const scoreHtml = pct != null ? `<span class="hs-result-score">${pct}%</span>` : '';
 
       return `
-        <div class="hs-result" data-url="${escapeHtml(s.url)}" data-title="${escapeHtml(s.title)}" data-image="${s.image ? escapeHtml(resolveImage(s.image)) : ''}">
+        <div class="hs-result" data-url="${escapeHtml(s.url)}" data-title="${escapeHtml(s.title)}" data-image="${s.image ? escapeHtml(resolveImage(s.image)) : ''}" data-category="${escapeHtml(s.category || '')}">
           <div class="hs-result-thumb">${thumbHtml}</div>
           <div class="hs-result-body">
             <div class="hs-result-title">${highlightMatch(s.title, data.query)}</div>
@@ -253,10 +253,14 @@
     const url = el.dataset.url;
     const title = el.dataset.title;
 
-    if (image) {
+    const category = el.dataset.category || '';
+    const isImage = category.toLowerCase() === 'obrázek' || category.toLowerCase() === 'obrazek';
+    if (isImage && image) {
       openLightbox(image, title, url);
     } else if (url) {
-      window.location.href = url;
+      // Pages and documents: navigate directly
+      const fullUrl = url.startsWith('http') ? url : 'https://www.hanak-nabytek.cz' + url;
+      window.open(fullUrl, '_blank');
     }
   }
 
